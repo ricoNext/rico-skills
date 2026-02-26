@@ -1,3 +1,3 @@
 # rico-skills
 
-Skills for Claude Code
+rico agent skills
