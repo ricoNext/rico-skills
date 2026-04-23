@@ -1,3 +1,6 @@
+# 若仓库根下误建 .rico-skills/（作者档案已固定 ~/.rico-skills/author-writing-style/profiles/）
+.rico-skills/
+
 # Logs
 logs
 *.log
