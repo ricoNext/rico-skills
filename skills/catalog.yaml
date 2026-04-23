@@ -1,8 +1,10 @@
-# 可选：供人类与脚本检索的 skill 索引（路径相对本仓库根目录）
-# version: 1
-# skills:
-#   - id: skill-slug
-#     path: skills/skill-slug
-#     name: 展示名称
-#     description: 与 SKILL.md frontmatter 对齐的简短描述
-#     tags: [cursor, claude, devops]
+# 供人类与脚本检索的 skill 索引（路径相对本仓库根目录）
+version: 1
+skills:
+  - id: author-writing-style
+    path: skills/author-writing-style
+    name: 作者行文风格
+    description: >-
+      从纯文本归纳行文习惯并按作者写入 profiles；或按档案改写/生成中文内容。
+      本版本仅支持对话内文本，不含多文件、目录与 URL 导入。
+    tags: [writing, chinese, style, rewrite]
