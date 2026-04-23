@@ -1,8 +1,8 @@
 ---
-author_display_name: 默认作者
+
+## author_display_name: 默认作者
 author_slug: default
 last_updated: 2026-04-23
----
 
 ## 文体与基调
 

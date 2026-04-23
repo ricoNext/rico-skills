@@ -5,6 +5,6 @@ skills:
     path: skills/author-writing-style
     name: 作者行文风格
     description: >-
-      从纯文本归纳行文习惯并按作者写入 profiles；或按档案改写/生成中文内容。
-      本版本仅支持对话内文本，不含多文件、目录与 URL 导入。
+      从纯文本或网页 URL（抓取正文后）归纳行文习惯，按作者写入固定目录 ~/.rico-skills/author-writing-style/profiles；
+      或按档案改写/生成中文内容。不含多本地文件与目录批量导入。
     tags: [writing, chinese, style, rewrite]
