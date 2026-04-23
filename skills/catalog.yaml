@@ -1,0 +1,8 @@
+# 可选：供人类与脚本检索的 skill 索引（路径相对本仓库根目录）
+# version: 1
+# skills:
+#   - id: skill-slug
+#     path: skills/skill-slug
+#     name: 展示名称
+#     description: 与 SKILL.md frontmatter 对齐的简短描述
+#     tags: [cursor, claude, devops]
