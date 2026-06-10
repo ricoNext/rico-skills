@@ -10,7 +10,7 @@ description: 从 YApi 读取接口定义并生成/更新项目中的 API 和 Typ
 
 ## CLI 准备
 
-**重要**：Cookie 获取、接口拉取、代码规范检测脚本位于 `{baseDir}/scripts/`。
+**重要**：Cookie 获取、接口拉取、代码生成、规范检测脚本位于 `{baseDir}/scripts/`。
 
 **Agent 执行说明**：
 
@@ -20,7 +20,8 @@ description: 从 YApi 读取接口定义并生成/更新项目中的 API 和 Typ
 4. `${FETCH_INTERFACE}` = `node {baseDir}/scripts/fetch-interface.mjs`
 5. `${RESOLVE_ONLY}` = `node {baseDir}/scripts/fetch-interface.mjs --resolve-only`（仅展开分类，拉取接口 ID 列表，不获取详情）
 6. `${DETECT_CODEGEN}` = `node {baseDir}/scripts/detect-codegen-style.mjs`（扫描项目代码规范，生成 `reference/detected-api-style.md`）
-7. 下文中的 `${GET_COOKIE}`、`${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${DETECT_CODEGEN}` 均替换为上述命令
+7. `${GENERATE_API}` = `node {baseDir}/scripts/generate-api.mjs`（根据规范生成 API 代码）
+8. 下文中的 `${GET_COOKIE}`、`${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${DETECT_CODEGEN}`、`${GENERATE_API}` 均替换为上述命令
 
 ## 执行流程
 
@@ -436,9 +437,22 @@ ask_user_question({
 
 ### 4. 批量生成接口定义
 
+#### 4.0 应用检测到的代码规范
+
+在代码生成前，系统自动读取 `{baseDir}/reference/detected-api-style.md`，提取用户定义的规范：
+
+- **API 存放位置**：从文件中的「[样本代码]」块读取目录（默认 `src/api/`）
+- **类型定义风格**：内联 vs 分离式
+- **响应包装方式**：`Response<T>`、`ApiResponse<T>` 等
+- **命名规范**：camelCase vs snake_case
+
+若未检测到规范文件，使用项目内代码分析的推断结果，或使用默认规范。
+
 #### 4.1 按 API 定义规范生成代码
 
-遍历接口列表，为每个接口生成代码：
+遍历接口列表，为每个接口生成代码。
+
+**示例输出** (基于检测到的规范)：
 
 **API 文件** (`src/api/{module}.ts`)：
 ```typescript
@@ -446,7 +460,7 @@ import request from "@/api";
 
 /**
  * {接口标题}
- * https://yapi.iotbull.com/project/{projectId}/interface/api/{id}
+ * https://yapi.iotbull.com/project/{projectId}/interface/api/{interfaceId}
  */
 export const getXxx = (data: {
 	/** 字段说明 */
@@ -455,11 +469,17 @@ export const getXxx = (data: {
 	request<TXxxResponse>("/v1/xxx/xxx", { data });
 ```
 
-**关键规范**：
-1. **入参类型**：优先在函数签名处内联定义（对象字面量类型 + 字段 JSDoc），无需单独声明
-2. **返回类型**：列表分页使用 `Response.PageData<T>`，单条使用具体类型
-3. **命名**：动词 + 名词（getXxxList、createXxx、updateXxx、deleteXxx）
-4. **注释**：必须包含接口说明和 YApi 地址两行
+**生成流程**：
+1. 读取 `detected-api-style.md` 中的规范配置
+2. 从接口路径推断模块名（如 `/user/detail` → `user.ts`）
+3. 根据规范生成函数名、参数类型、返回类型
+4. 生成函数代码并按模块合并
+
+**关键规范** (可在 Markdown 中调整)：
+1. **入参类型**：根据 `typeStyle` 选择内联或分离定义
+2. **返回类型**：根据 `responseWrapper` 应用包装方式
+3. **命名**：根据 `naming` 选择 camelCase 或 snake_case
+4. **注释**：包含接口说明和 YApi 地址（两行）
 
 **类型转换规则**：
 
@@ -468,15 +488,49 @@ export const getXxx = (data: {
 | string | string |
 | integer | number |
 | number | number |
-| boolean | number (0/1) |
+| boolean | boolean |
 | array | T[] |
-| object | 嵌套类型 |
+| object | Record<string, any> |
 
 #### 4.2 文件组织策略
 
 - **同模块接口**：合并到同一个 API 文件中
 - **新增文件**：根据接口路径推断模块名，创建新文件
 - **导入整理**：自动整理 import 语句，去除未使用的导入
+
+#### 4.3 生成代码的工作流（Agent 执行）
+
+**步骤 1**：拉取接口详情
+
+```bash
+${FETCH_INTERFACE} {interfaceIds} > interfaces.json
+```
+
+输出包含所有接口的完整定义和元数据。
+
+**步骤 2**：生成 API 代码
+
+```bash
+node {baseDir}/scripts/generate-api.mjs interfaces.json {outputDir}
+```
+
+脚本会：
+- 读取 `detected-api-style.md` 中的规范
+- 根据规范生成 API 函数
+- 按模块写入 `{outputDir}` 中的 `.ts` 文件
+
+**步骤 3**：代码质量检查（由 Agent 执行）
+
+在项目中运行代码检查工具：
+```bash
+# TypeScript 检查
+tsc --noEmit
+
+# 格式和 lint 检查
+biome check {outputDir}
+```
+
+若有错误，自动修复或提示用户手动处理。
 
 ### 5. 代码质量检查
 

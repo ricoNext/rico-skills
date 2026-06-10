@@ -33,7 +33,7 @@ export function parseCodegenStyle(styleFile) {
   }
 
   // 2. 解析类型定义风格
-  const typeStyleMatch = content.match(/## 项目结构检测结果[\s\S]*?**推断风格**：([^\n]+)/);
+  const typeStyleMatch = content.match(/## 项目结构检测结果[\s\S]*?\*\*推断风格\*\*：([^\n]+)/);
   if (typeStyleMatch) {
     const style = typeStyleMatch[1].trim();
     config.typeStyle = style.includes("分离") ? "separate" : "inline";
@@ -41,7 +41,7 @@ export function parseCodegenStyle(styleFile) {
 
   // 3. 解析响应类型包装
   const responseWrapperMatch = content.match(
-    /### 响应类型包装[\s\S]*?**推断包装方式**：`([^`]+)`/
+    /### 响应类型包装[\s\S]*?\*\*推断包装方式\*\*：`([^`]+)`/
   );
   if (responseWrapperMatch) {
     config.responseWrapper = responseWrapperMatch[1].trim();
@@ -61,6 +61,9 @@ export function parseCodegenStyle(styleFile) {
 
 /**
  * 根据规范配置生成函数名
+ * 路径如: /user/list -> getUser
+ *        /user/create -> createUser
+ *        /product/detail -> getProduct
  */
 export function generateFunctionName(path, method, naming = "camelCase") {
   const parts = path
@@ -71,7 +74,6 @@ export function generateFunctionName(path, method, naming = "camelCase") {
     parts.push("request");
   }
 
-  let name = "";
   const verbMap = {
     get: "get",
     post: "create",
@@ -82,9 +84,28 @@ export function generateFunctionName(path, method, naming = "camelCase") {
 
   const verb = verbMap[method.toLowerCase()] || "request";
 
-  // 构建函数名：verb + 资源名
-  const resource = parts.slice(-1)[0];
-  name = verb + resource.charAt(0).toUpperCase() + resource.slice(1);
+  // 识别资源名：
+  // - 若路径中最后是操作词（create, update, delete, list, detail）
+  //   则资源名取前面的
+  // - 否则资源名就是最后一段
+
+  const actionWords = ["create", "update", "delete", "list", "detail", "info", "get", "set"];
+
+  let resource;
+  if (parts.length >= 2) {
+    const lastPart = parts[parts.length - 1].toLowerCase();
+    if (actionWords.includes(lastPart)) {
+      // 取倒数第二段
+      resource = parts[parts.length - 2];
+    } else {
+      resource = parts[parts.length - 1];
+    }
+  } else {
+    resource = parts[0];
+  }
+
+  // 构建函数名：verb + resource
+  let name = verb + resource.charAt(0).toUpperCase() + resource.slice(1);
 
   if (naming === "snake_case") {
     name = name.replace(/([A-Z])/g, "_$1").toLowerCase();
