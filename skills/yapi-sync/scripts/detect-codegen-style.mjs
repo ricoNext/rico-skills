@@ -3,9 +3,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SKILL_DIR = path.resolve(__dirname, "..");
-const CONFIG_FILE = path.join(SKILL_DIR, "config.json");
-const REF_FILE = path.join(SKILL_DIR, "reference/detected-api-style.md");
 
 // 扫描目标目录
 const SCAN_DIRS = ["src", "lib"];
@@ -120,10 +117,10 @@ export const getUser = (data: GetUserRequest) =>
   request<UserResponse>("/user/detail", { data });
 \`\`\``;
 
-  return `# 检测到的 API 代码规范
+  return `# YApi 同步 - 代码生成规范
 
-本文档由 \`detect-codegen-style.mjs\` 自动生成。
-您可以编辑本文档的「[样本代码]」块来调整代码生成的规范。
+本文档由 \`detect-codegen-style.mjs\` 自动生成于 \`${projectRoot}\`。
+您可以编辑本文档来自定义代码生成规范。
 
 ## 项目结构检测结果
 
@@ -250,15 +247,16 @@ async function detectStyle() {
   const scanTime = now.toISOString().split("T")[0];
   const markdown = generateMarkdown(stats, projectRoot, scanTime);
 
-  // 确保 reference 目录存在
-  const refDir = path.dirname(REF_FILE);
-  if (!fs.existsSync(refDir)) {
-    fs.mkdirSync(refDir, { recursive: true });
+  // 确保 .yapi-sync 目录存在
+  const yapiSyncDir = path.join(projectRoot, ".yapi-sync");
+  if (!fs.existsSync(yapiSyncDir)) {
+    fs.mkdirSync(yapiSyncDir, { recursive: true });
   }
 
-  fs.writeFileSync(REF_FILE, markdown, "utf-8");
+  const styleFile = path.join(yapiSyncDir, "api-style.md");
+  fs.writeFileSync(styleFile, markdown, "utf-8");
   console.log(`✅ 规范检测完成，已保存至：`);
-  console.log(`   ${REF_FILE}`);
+  console.log(`   ${styleFile}`);
   console.log(`\n📖 您可以编辑文件中的「[样本代码]」块来调整规范`);
 }
 

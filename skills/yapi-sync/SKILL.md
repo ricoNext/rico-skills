@@ -160,17 +160,17 @@ ${RESOLVE_ONLY} https://yapi.example.com/project/{projectId}/interface/api/cat_{
 
 #### 1.1.5 首次运行：自动检测代码规范
 
-若 `{baseDir}/reference/detected-api-style.md` 不存在或已删除，执行：
+若用户项目中不存在 `{projectRoot}/.yapi-sync/api-style.md`，执行：
 
 ```bash
 ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}
 ```
 
 脚本会：
-1. 扫描项目的 `src/api/`、`lib/api/` 等目录
+1. 扫描用户项目的 `src/api/`、`lib/api/` 等目录
 2. 分析现有 API 文件的代码模式
 3. 推断代码规范（存放位置、类型风格、响应包装、命名规范等）
-4. 生成 `{baseDir}/reference/detected-api-style.md`
+4. 在 **用户项目** 中生成 `{projectRoot}/.yapi-sync/api-style.md`
 
 **示例输出**：
 ```
@@ -178,7 +178,17 @@ ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot
    项目根目录：/path/to/project
    找到 8 个 API 文件
 ✅ 规范检测完成，已保存至：
-   skills/yapi-sync/reference/detected-api-style.md
+   /path/to/project/.yapi-sync/api-style.md
+```
+
+**文件位置**（用户项目中）：
+```
+project/
+├── .yapi-sync/
+│   └── api-style.md          # 自动生成的代码规范定义
+├── src/
+│   └── api/
+└── package.json
 ```
 
 **用户可以**：
@@ -187,8 +197,8 @@ ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot
 - 删除该文件后重新运行脚本以重新检测
 
 **检测失败处理**：
-- 若项目中无现有 API 文件，脚本提示使用默认规范
-- 用户可手动编辑 `detected-api-style.md` 定义规范
+- 若用户项目中无现有 API 文件，脚本提示使用默认规范
+- 用户可手动编辑 `.yapi-sync/api-style.md` 定义规范
 
 #### 1.2 获取 Cookie（三种方式）
 
@@ -435,18 +445,16 @@ ask_user_question({
 })
 ```
 
-### 4. 批量生成接口定义
-
 #### 4.0 应用检测到的代码规范
 
-在代码生成前，系统自动读取 `{baseDir}/reference/detected-api-style.md`，提取用户定义的规范：
+在代码生成前，系统自动读取用户项目中的 `{projectRoot}/.yapi-sync/api-style.md`，提取用户定义的规范：
 
 - **API 存放位置**：从文件中的「[样本代码]」块读取目录（默认 `src/api/`）
 - **类型定义风格**：内联 vs 分离式
 - **响应包装方式**：`Response<T>`、`ApiResponse<T>` 等
 - **命名规范**：camelCase vs snake_case
 
-若未检测到规范文件，使用项目内代码分析的推断结果，或使用默认规范。
+若用户项目中不存在规范文件，首先执行步骤 1.1.5 自动检测。
 
 #### 4.1 按 API 定义规范生成代码
 
@@ -511,11 +519,11 @@ ${FETCH_INTERFACE} {interfaceIds} > interfaces.json
 **步骤 2**：生成 API 代码
 
 ```bash
-node {baseDir}/scripts/generate-api.mjs interfaces.json {outputDir}
+node {baseDir}/scripts/generate-api.mjs interfaces.json {projectRoot} {outputDir}
 ```
 
 脚本会：
-- 读取 `detected-api-style.md` 中的规范
+- 读取 `{projectRoot}/.yapi-sync/api-style.md` 中的规范
 - 根据规范生成 API 函数
 - 按模块写入 `{outputDir}` 中的 `.ts` 文件
 

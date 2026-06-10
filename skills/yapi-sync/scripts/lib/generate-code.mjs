@@ -1,18 +1,17 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { parseCodegenStyle, generateFunctionName } from "./parse-codegen-style.mjs";
-import { skillDir } from "./config.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * 根据 YApi 接口定义和规范配置生成 API 代码
  * @param {Array} interfaces - YApi 接口对象数组
+ * @param {string} projectRoot - 项目根目录
  * @returns {Object} 按模块名组织的生成代码
  */
-export async function generateApiCode(interfaces) {
-  const styleFile = path.join(skillDir, "reference/detected-api-style.md");
-  const config = parseCodegenStyle(styleFile);
+export async function generateApiCode(interfaces, projectRoot) {
+  const config = parseCodegenStyle(projectRoot);
 
   const moduleMap = new Map();
 
