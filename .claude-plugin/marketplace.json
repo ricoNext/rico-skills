@@ -1,0 +1,21 @@
+{
+  "name": "rico-skills",
+  "owner": {
+    "name": "Rico"
+  },
+  "metadata": {
+    "description": "Agent skills for writing workflows and author style profiles",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "rico-skills",
+      "description": "Writing and author-style skills (Markdown SKILL.md)",
+      "source": "./",
+      "strict": true,
+      "skills": [
+        "./skills/author-writing-style"
+      ]
+    }
+  ]
+}

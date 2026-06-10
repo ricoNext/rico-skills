@@ -21,7 +21,7 @@ Rico 维护的 **Agent Skills** 集合，以 **GitHub 公开仓库 + 插件市�
 npx skills add ricoNext/rico-skills
 ```
 
-可先执行 `npx skills add ricoNext/rico-skills --list` 预览；当前仓库仅包含 **`author-writing-style`** 一项可安装 skill。
+可先执行 `npx skills add ricoNext/rico-skills --list` 预览；当前仓库仅包含 `**author-writing-style**` 一项可安装 skill。
 
 ### 发布到 ClawHub / OpenClaw
 

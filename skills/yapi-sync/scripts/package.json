@@ -1,0 +1,8 @@
+{
+  "name": "yapi-sync-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "^24.34.0"
+  }
+}
