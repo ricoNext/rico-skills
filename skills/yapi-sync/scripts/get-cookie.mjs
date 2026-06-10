@@ -29,7 +29,8 @@ const waitForLoginCookie = (page, deadline) => {
 };
 
 const main = () => {
-    const config = readConfig();
+    const projectRoot = process.argv[2];
+    const config = readConfig(projectRoot);
     const baseUrl = config.baseUrl;
 
     console.log(`正在打开浏览器，请在页面中登录 YApi：${baseUrl}`);
@@ -45,9 +46,10 @@ const main = () => {
                 const nextConfig = writeConfig({
                     ...config,
                     cookie,
-                });
+                }, projectRoot);
 
-                console.log("YApi Cookie 已自动获取并写入 config.json");
+                const configLocation = projectRoot ? `${projectRoot}/.yapi-sync/config.json` : "config.json";
+                console.log(`YApi Cookie 已自动获取并写入 ${configLocation}`);
                 return nextConfig;
             })
             .finally(() => browser.close());

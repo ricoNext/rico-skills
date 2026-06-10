@@ -12,16 +12,19 @@ description: 从 YApi 读取接口定义并生成/更新项目中的 API 和 Typ
 
 **重要**：Cookie 获取、接口拉取、代码生成、规范检测脚本位于 `{baseDir}/scripts/`。
 
+所有脚本都支持在用户项目的 `.yapi-sync/` 目录中读写配置和规范文件。
+
 **Agent 执行说明**：
 
 1. 将本 SKILL.md 所在目录记为 `{baseDir}`
-2. 若 `{baseDir}/scripts/node_modules` 不存在，执行 `npm install --prefix {baseDir}/scripts`（使用系统已安装的 Chrome/Edge，无需下载 Chromium）
-3. `${GET_COOKIE}` = `node {baseDir}/scripts/get-cookie.mjs`
-4. `${FETCH_INTERFACE}` = `node {baseDir}/scripts/fetch-interface.mjs`
-5. `${RESOLVE_ONLY}` = `node {baseDir}/scripts/fetch-interface.mjs --resolve-only`（仅展开分类，拉取接口 ID 列表，不获取详情）
-6. `${DETECT_CODEGEN}` = `node {baseDir}/scripts/detect-codegen-style.mjs`（扫描项目代码规范，生成 `reference/detected-api-style.md`）
-7. `${GENERATE_API}` = `node {baseDir}/scripts/generate-api.mjs`（根据规范生成 API 代码）
-8. 下文中的 `${GET_COOKIE}`、`${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${DETECT_CODEGEN}`、`${GENERATE_API}` 均替换为上述命令
+2. 将用户项目根目录记为 `{projectRoot}`
+3. 若 `{baseDir}/scripts/node_modules` 不存在，执行 `npm install --prefix {baseDir}/scripts`（使用系统已安装的 Chrome/Edge，无需下载 Chromium）
+4. `${GET_COOKIE}` = `node {baseDir}/scripts/get-cookie.mjs {projectRoot}`
+5. `${FETCH_INTERFACE}` = `node {baseDir}/scripts/fetch-interface.mjs --project {projectRoot}`
+6. `${RESOLVE_ONLY}` = `node {baseDir}/scripts/fetch-interface.mjs --resolve-only --project {projectRoot}`（仅展开分类，拉取接口 ID 列表，不获取详情）
+7. `${DETECT_CODEGEN}` = `node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}`（扫描项目代码规范，生成 `{projectRoot}/.yapi-sync/api-style.md`）
+8. `${GENERATE_API}` = `node {baseDir}/scripts/generate-api.mjs`（根据规范生成 API 代码）
+9. 下文中的 `${GET_COOKIE}`、`${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${DETECT_CODEGEN}`、`${GENERATE_API}` 均替换为上述命令
 
 ## 执行流程
 

@@ -3,17 +3,18 @@ import { ensureValidCookie, getInterfaceDetail, listCatInterfaces } from "./lib/
 
 const printUsage = () => {
     console.log(`用法:
-  node fetch-interface.mjs <input> [input...]
-  node fetch-interface.mjs "18430,18431"
-  node fetch-interface.mjs https://yapi.iotbull.com/project/52/interface/api/cat_1686
-  node fetch-interface.mjs --resolve-only cat_1686
+  node fetch-interface.mjs [--project <projectRoot>] <input> [input...]
+  node fetch-interface.mjs --project /path/to/project 18430,18431
+  node fetch-interface.mjs --project /path/to/project https://yapi.iotbull.com/project/52/interface/api/cat_1686
+  node fetch-interface.mjs --resolve-only --project /path/to/project cat_1686
 
 输入支持:
   - 单个/多个接口 ID 或接口 URL
   - 分类 URL（/interface/api/cat_{catId}）或 cat_{catId} / cat:{catId}
 
 选项:
-  --resolve-only  仅解析并展开分类，输出接口 ID 列表，不拉取详情`);
+  --project <projectRoot>  用户项目根目录，配置读写到 .yapi-sync/config.json
+  --resolve-only           仅解析并展开分类，输出接口 ID 列表，不拉取详情`);
 };
 
 const resolveInputs = (parsedItems) => {
@@ -138,6 +139,19 @@ const main = () => {
     const args = process.argv.slice(2);
     const resolveOnly = args.includes("--resolve-only");
     const inputArgs = args.filter((item) => item !== "--resolve-only");
+
+    // 检查是否传入项目根目录
+    let projectRoot = null;
+    const yapiProjectRootIdx = inputArgs.findIndex((arg) => arg === "--project");
+    if (yapiProjectRootIdx >= 0 && yapiProjectRootIdx < inputArgs.length - 1) {
+        projectRoot = inputArgs[yapiProjectRootIdx + 1];
+        inputArgs.splice(yapiProjectRootIdx, 2);
+    }
+
+    // 设置环境变量供 lib 使用
+    if (projectRoot) {
+        process.env.YAPI_PROJECT_ROOT = projectRoot;
+    }
 
     if (inputArgs.length === 0) {
         printUsage();
