@@ -1,6 +1,4 @@
-import { spawn } from "node:child_process";
-import path from "node:path";
-import { readConfig, scriptsDir } from "./config.mjs";
+import { readConfig } from "./config.mjs";
 
 export const AUTH_ERROR_CODES = new Set([40_011, 401]);
 
@@ -29,24 +27,6 @@ export const formatCookie = (cookies) => {
     return `_yapi_token=${token.value}; _yapi_uid=${uid.value}`;
 };
 
-export const runGetCookie = () =>
-    new Promise((resolve, reject) => {
-        const scriptPath = path.join(scriptsDir, "get-cookie.mjs");
-        const child = spawn(process.execPath, [scriptPath], {
-            stdio: "inherit",
-        });
-
-        child.on("error", reject);
-        child.on("close", (code) => {
-            if (code === 0) {
-                resolve(readConfig());
-                return;
-            }
-
-            reject(new Error(`get-cookie.mjs exited with code ${code ?? "unknown"}`));
-        });
-    });
-
 export const fetchJson = (url, cookie) =>
     fetch(url, {
         headers: {
@@ -65,7 +45,7 @@ export const listCatInterfaces = (catId, options = {}) => {
 
         return fetchJson(url, cookie).then((result) => {
             if (isAuthError(result)) {
-                const error = new Error(result.errmsg || "YApi cookie 已失效，请重新登录");
+                const error = new Error(result.errmsg || "YApi cookie 已失效，请手动更新 Cookie");
                 error.code = "YAPI_AUTH_REQUIRED";
                 error.response = result;
                 throw error;
@@ -101,7 +81,7 @@ export const getInterfaceDetail = (interfaceId, options = {}) => {
 
     return fetchJson(url, cookie).then((result) => {
         if (isAuthError(result)) {
-            const error = new Error(result.errmsg || "YApi cookie 已失效，请重新登录");
+            const error = new Error(result.errmsg || "YApi cookie 已失效，请手动更新 Cookie");
             error.code = "YAPI_AUTH_REQUIRED";
             error.response = result;
             throw error;
@@ -118,13 +98,25 @@ export const getInterfaceDetail = (interfaceId, options = {}) => {
     });
 };
 
+const throwAuthRequired = (config) => {
+    const error = new Error(
+        `YApi Cookie 未配置或已失效，请手动获取 Cookie 并写入配置文件。\n` +
+        `  1. 在浏览器中访问 ${config.baseUrl} 并登录\n` +
+        `  2. 打开开发者工具 (F12) > Application > Cookies\n` +
+        `  3. 复制 _yapi_token 和 _yapi_uid 的值，格式：_yapi_token=xxx; _yapi_uid=xxx\n` +
+        `  4. 写入 .yapi-sync/config.json 的 cookie 字段`
+    );
+    error.code = "YAPI_AUTH_REQUIRED";
+    throw error;
+};
+
 export const ensureValidCookie = (options = {}) => {
     const config = readConfig();
     const testId = options.testInterfaceId;
     const testCatId = options.testCatId;
 
     if (!config.cookie) {
-        return runGetCookie();
+        return throwAuthRequired(config);
     }
 
     if (!(testId || testCatId)) {
@@ -140,6 +132,6 @@ export const ensureValidCookie = (options = {}) => {
                 throw error;
             }
 
-            return runGetCookie();
+            throwAuthRequired(config);
         });
 };

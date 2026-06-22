@@ -19,12 +19,11 @@ description: 从 YApi 读取接口定义并生成/更新项目中的 API 和 Typ
 1. 将本 SKILL.md 所在目录记为 `{baseDir}`
 2. 将用户项目根目录记为 `{projectRoot}`
 3. 若 `{baseDir}/scripts/node_modules` 不存在，执行 `npm install --prefix {baseDir}/scripts`（使用系统已安装的 Chrome/Edge，无需下载 Chromium）
-4. `${GET_COOKIE}` = `node {baseDir}/scripts/get-cookie.mjs {projectRoot}`
-5. `${FETCH_INTERFACE}` = `node {baseDir}/scripts/fetch-interface.mjs --project {projectRoot}`
-6. `${RESOLVE_ONLY}` = `node {baseDir}/scripts/fetch-interface.mjs --resolve-only --project {projectRoot}`（仅展开分类，拉取接口 ID 列表，不获取详情）
-7. `${DETECT_CODEGEN}` = `node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}`（扫描项目代码规范，生成 `{projectRoot}/.yapi-sync/api-style.md`）
-8. `${GENERATE_API}` = `node {baseDir}/scripts/generate-api.mjs`（根据规范生成 API 代码）
-9. 下文中的 `${GET_COOKIE}`、`${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${DETECT_CODEGEN}`、`${GENERATE_API}` 均替换为上述命令
+4. `${FETCH_INTERFACE}` = `node {baseDir}/scripts/fetch-interface.mjs --project {projectRoot}`
+5. `${RESOLVE_ONLY}` = `node {baseDir}/scripts/fetch-interface.mjs --resolve-only --project {projectRoot}`（仅展开分类，拉取接口 ID 列表，不获取详情）
+6. `${DETECT_CODEGEN}` = `node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}`（扫描项目代码规范，生成 `{projectRoot}/.yapi-sync/api-style.md`）
+7. `${GENERATE_API}` = `node {baseDir}/scripts/generate-api.mjs`（根据规范生成 API 代码）
+8. 下文中的 `${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${DETECT_CODEGEN}`、`${GENERATE_API}` 均替换为上述命令
 
 ## 执行流程
 
@@ -203,98 +202,17 @@ project/
 - 若用户项目中无现有 API 文件，脚本提示使用默认规范
 - 用户可手动编辑 `.yapi-sync/api-style.md` 定义规范
 
-#### 1.2 获取 Cookie（三种方式）
+#### 1.2 获取 Cookie（手动方式）
 
-当 cookie 未配置或失效时，使用 `ask_user_question` 询问用户选择获取方式：
+当 cookie 未配置或失效时，直接提示用户手动提供 Cookie：
 
-```typescript
-ask_user_question({
-  questions: [{
-    header: "Cookie 获取方式",
-    multiSelect: false,
-    options: [
-      { label: "自动打开浏览器", description: "自动启动浏览器，登录后自动保存 Cookie" },
-      { label: "手动提供 Cookie", description: "由我提供 Cookie，无需打开浏览器" },
-      { label: "自动登录（用户名+密码）", description: "提供用户名密码，自动登录并保存 Cookie" }
-    ],
-    question: "检测到 YApi 登录凭证未配置或无效，请选择获取方式："
-  }]
-})
 ```
-
-##### 方式 A：自动打开浏览器
-
-**步骤 1**: 告知用户即将自动打开浏览器：
+YApi Cookie 未配置或已失效，请手动获取 Cookie 并写入配置文件。
+  1. 在浏览器中访问 {baseUrl} 并登录
+  2. 打开开发者工具 (F12) > Application > Cookies
+  3. 复制 _yapi_token 和 _yapi_uid 的值，格式：_yapi_token=xxx; _yapi_uid=xxx
+  4. 写入 .yapi-sync/config.json 的 cookie 字段
 ```
-将要打开浏览器完成 YApi 登录，登录成功后脚本会自动保存 Cookie。
-```
-
-**步骤 2**: 在终端执行 `${GET_COOKIE}`
-
-脚本行为：
-- 自动打开可见浏览器窗口并访问 `config.json` 中的 `baseUrl`
-- 轮询检测 `_yapi_token` 与 `_yapi_uid`
-- 登录成功后自动写入 `{baseDir}/config.json`
-- 最长等待 5 分钟，超时则报错退出
-
-**步骤 3**: 若自动获取失败（浏览器无法启动、超时、用户取消），提示用户错误原因并建议改用「手动提供 Cookie」方式
-
-**步骤 4**: 继续执行步骤 2.1
-
-##### 方式 C：自动登录（用户名+密码）
-
-**步骤 1**: 询问用户基本信息
-
-使用 `ask_user_question` 收集登录信息：
-
-```typescript
-ask_user_question({
-  questions: [
-    {
-      header: "YApi 地址",
-      multiSelect: false,
-      options: [
-        { label: "继续", description: `使用预配置的地址：{baseUrl}` },
-        { label: "更改", description: "输入新的 YApi 地址" }
-      ],
-      question: "请确认 YApi 地址（或更改为新地址）："
-    },
-    {
-      header: "登录凭证",
-      multiSelect: false,
-      options: [
-        { label: "已准备", description: "准备好输入用户名和密码" }
-      ],
-      question: "请输入登录凭证："
-    }
-  ]
-})
-```
-
-收集字段：
-- `baseUrl` - YApi 基础 URL（可预填配置中的值）
-- `username` - 登录用户名
-- `password` - 登录密码（隐藏输入）
-
-**步骤 2**: 在终端执行 `${LOGIN_SCRIPT}`
-
-脚本行为：
-- 使用浏览器自动化工具（Puppeteer/Playwright）打开 YApi 登录页
-- 自动填充用户名和密码字段
-- 提交登录表单
-- 等待登录完成（检测重定向或特定页面元素）
-- 提取 Cookie（`_yapi_token` 和 `_yapi_uid`）
-- 自动写入 `{baseDir}/config.json`
-
-**步骤 3**: 若自动登录失败（账号错误、网络问题、登录表单变更等），提示失败原因并建议改用其他方式
-
-可能的失败情况：
-- 用户名或密码错误 → 提示凭证错误
-- 验证码/MFA 要求 → 建议改用自动打开浏览器方式
-- 登录表单结构变更 → 提示需要手动获取
-- 网络超时 → 重试或改用其他方式
-
-**步骤 4**: 继续执行步骤 2.1
 
 **步骤 1**: 引导用户获取 Cookie
 
@@ -317,8 +235,7 @@ ask_user_question({
     header: "YApi Cookie",
     multiSelect: false,
     options: [
-      { label: "已复制，继续", description: "我已获取 Cookie，准备粘贴" },
-      { label: "返回选择", description: "返回上一步，改用其他方式" }
+      { label: "已复制，继续", description: "我已获取 Cookie，准备粘贴" }
     ],
     question: "请将 Cookie 粘贴到下方（包含 _yapi_token 和 _yapi_uid）："
   }]
@@ -328,7 +245,7 @@ ask_user_question({
 **步骤 3**: 接收用户输入的 Cookie，验证包含必要字段（`_yapi_token` 和 `_yapi_uid`）
 
 - **验证失败** → 提示格式错误，重新要求粘贴
-- **验证成功** → 写入 `{baseDir}/config.json`
+- **验证成功** → 写入 `{projectRoot}/.yapi-sync/config.json`
 
 **步骤 4**: 继续执行步骤 2.1
 
@@ -340,7 +257,7 @@ ask_user_question({
 - 自动识别分类 URL，先调用 `list_cat` 展开为接口 ID 列表
 - 再逐个调用 `interface/get` 获取完整接口定义
 - 在请求前自动校验 cookie（分类输入用 `list_cat` 探测，接口输入用 `interface/get` 探测）
-- 遇到 `errcode=40011` 或「请登录」类错误时，自动执行 `${GET_COOKIE}` 并重试
+- 遇到 `errcode=40011` 或「请登录」类错误时，抛出 `YAPI_AUTH_REQUIRED` 错误，提示用户手动更新 Cookie
 - 输出 JSON 结果，包含 `resolved`（展开信息）及每个接口的 `data` 或失败原因
 
 也可手动请求：
@@ -350,7 +267,7 @@ GET {baseUrl}/api/interface/get?id={interfaceId}
 ```
 
 判断响应状态：
-- **cookie 失效** (`errcode=40011` / `请登录`) → 执行步骤 1.2，自动打开浏览器重新获取
+- **cookie 失效** (`errcode=40011` / `请登录`) → 执行步骤 1.2，提示用户手动提供 Cookie
 - **请求成功** → 解析接口信息，加入处理队列
 - **请求失败** → 记录失败原因，继续处理下一个
 
@@ -581,8 +498,8 @@ biome check {outputDir}
 | 无有效 YApi 路径 | 抛出错误并退出 |
 | 分类 ID 无效或无权访问 | 记录失败原因，若仅含该分类则退出 |
 | 分类下无接口 | 提示后退出 |
-| Cookie 未配置/失效 | 提示用户选择获取方式（浏览器/手动/用户名密码） |
-| 自动登录失败 | 根据原因提示：凭证错误/MFA 要求/表单变更/网络问题，建议改用其他方式 |
+| Cookie 未配置/失效 | 提示用户手动获取 Cookie 并写入配置文件 |
+| 自动登录失败 | 根据原因提示：凭证错误/MFA 要求/表单变更/网络问题，建议手动获取 Cookie |
 | 单个接口请求失败 | 记录失败，继续处理其他接口 |
 | 类型冲突 | 提示用户选择处理方式 |
 | Biome/TS 报错 | 自动修复或提示手动处理 |
