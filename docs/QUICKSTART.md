@@ -24,14 +24,14 @@ cat /path/to/your/project/.yapi-sync/api-style.md
 
 ### 2. 配置 YApi Cookie
 
-```bash
-node skills/yapi-sync/scripts/get-cookie.mjs /path/to/your/project
-```
+在浏览器中访问你的 YApi 地址并登录，然后：
 
-脚本会自动打开浏览器，登录后自动保存 Cookie 到 `.yapi-sync/config.json`。
+1. 打开开发者工具 (F12) > Application > Cookies
+2. 复制 `_yapi_token` 和 `_yapi_uid` 的值
 
-**或手动配置**：
+创建配置文件：
 ```bash
+mkdir -p /path/to/your/project/.yapi-sync
 cat > /path/to/your/project/.yapi-sync/config.json << 'EOF'
 {
   "baseUrl": "https://your-yapi.com",
@@ -98,10 +98,10 @@ export const getUser = (data: GetUserRequest) =>
 ## 🆘 常见问题
 
 ### Cookie 过期了？
-重新运行 `get-cookie.mjs`：
-```bash
-node skills/yapi-sync/scripts/get-cookie.mjs /path/to/your/project
-```
+手动更新 `.yapi-sync/config.json` 中的 `cookie` 字段即可：
+1. 重新在浏览器中登录 YApi
+2. 复制新的 `_yapi_token` 和 `_yapi_uid`
+3. 更新配置文件
 
 ### 需要重新检测规范？
 删除 `.yapi-sync/api-style.md`，然后重新运行 `detect-codegen-style.mjs`

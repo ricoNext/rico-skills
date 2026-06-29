@@ -25,7 +25,6 @@ rico-skills/
 │   │   ├── SKILL.md                # Cookie auth & batch API generation flow
 │   │   ├── config.json             # Runtime config (baseUrl, cookie)
 │   │   └── scripts/                # Node.js automation scripts
-│   │       ├── get-cookie.mjs      # Browser auth script
 │   │       ├── fetch-interface.mjs # YApi API fetching script
 │   │       ├── login.mjs           # Auto-login script (planned)
 │   │       └── package.json        # Script dependencies
@@ -63,11 +62,6 @@ cat skills/<skill-id>/SKILL.md   # Read detailed implementation guide
 **Install script dependencies (first-time setup):**
 ```bash
 npm install --prefix skills/yapi-sync/scripts
-```
-
-**Run YApi cookie acquisition script:**
-```bash
-node skills/yapi-sync/scripts/get-cookie.mjs
 ```
 
 **Run YApi interface fetch script:**
@@ -119,10 +113,9 @@ Treat `SKILL.md` as the single source of truth for that skill; future instances 
 
 - **Input**: YApi interface URLs, interface IDs, or category pages
 - **Output**: Generated TypeScript API definitions in `src/api/` (user's project)
-- **Authentication**: Three methods for obtaining/storing cookie
-  - Method A: Auto-open browser for manual login → auto-extract Cookie
-  - Method B: User manually provides Cookie string
-  - Method C: User provides username/password → auto-login via Puppeteer (planned, Task #1)
+- **Authentication**: Two methods for obtaining/storing cookie
+  - Method A: User manually provides Cookie string (browser dev tools)
+  - Method B: User provides username/password → auto-login via Puppeteer (planned, Task #1)
 - **Workflow**: Parse URLs → verify auth → fetch interface definitions → check for conflicts → generate code → lint/type-check
 - **Scripts Location**: `skills/yapi-sync/scripts/` (Node.js modules using Puppeteer, ESCodeGen, etc.)
 
