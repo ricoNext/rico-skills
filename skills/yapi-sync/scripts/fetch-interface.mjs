@@ -111,15 +111,7 @@ const fetchInterfaceDetails = (interfaceIds) => {
                         })
                         .catch((error) => {
                             if (error.code === "YAPI_AUTH_REQUIRED") {
-                                return ensureValidCookie({ testInterfaceId: interfaceId }).then(() =>
-                                    getInterfaceDetail(interfaceId).then((data) => {
-                                        results.push({
-                                            data,
-                                            id: interfaceId,
-                                            ok: true,
-                                        });
-                                    })
-                                );
+                                throw error;
                             }
 
                             results.push({
@@ -210,14 +202,7 @@ const main = () => {
         });
 
     return ensureValidCookie({ testCatId, testInterfaceId })
-        .then(() => run())
-        .catch((error) => {
-            if (error.code !== "YAPI_AUTH_REQUIRED") {
-                throw error;
-            }
-
-            return ensureValidCookie({ testCatId, testInterfaceId }).then(() => run());
-        });
+        .then(() => run());
 };
 
 main().catch((error) => {

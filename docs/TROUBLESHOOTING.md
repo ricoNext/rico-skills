@@ -9,11 +9,11 @@
 **原因**：Cookie 过期了
 
 **解决**：
-```bash
-node scripts/get-cookie.mjs /path/to/project
-```
-
-重新打开浏览器登录，获取新的 Cookie。
+手动更新 `.yapi-sync/config.json` 中的 `cookie` 字段：
+1. 在浏览器中重新登录 YApi
+2. 打开开发者工具 (F12) > Application > Cookies
+3. 复制 `_yapi_token` 和 `_yapi_uid` 的值
+4. 更新配置文件中的 `cookie` 字段
 
 ---
 

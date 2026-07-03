@@ -22,7 +22,6 @@
 
 4. **完整的脚本工具链** ✓
    - `detect-codegen-style.mjs` - 规范检测
-   - `get-cookie.mjs` - 自动获取 Cookie
    - `fetch-interface.mjs` - 拉取接口定义
    - `generate-api.mjs` - 代码生成
    - `parse-codegen-style.mjs` - 规范解析库
@@ -63,7 +62,6 @@ rico-skills/
 │   ├── SKILL.md                         # 完整功能文档
 │   ├── scripts/
 │   │   ├── detect-codegen-style.mjs    # 规范检测
-│   │   ├── get-cookie.mjs              # Cookie 获取
 │   │   ├── fetch-interface.mjs         # 接口拉取
 │   │   ├── generate-api.mjs            # 代码生成 CLI
 │   │   ├── lib/
@@ -92,8 +90,9 @@ rico-skills/
 # 1. 初始化项目规范
 node scripts/detect-codegen-style.mjs /path/to/project
 
-# 2. 获取 Cookie
-node scripts/get-cookie.mjs /path/to/project
+# 2. 配置 Cookie（手动方式）
+# 在浏览器中登录 YApi，从开发者工具复制 _yapi_token 和 _yapi_uid
+# 写入 .yapi-sync/config.json
 
 # 3. 拉取接口
 node scripts/fetch-interface.mjs --project /path/to/project 123 > interfaces.json
