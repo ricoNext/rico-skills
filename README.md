@@ -2,7 +2,7 @@
 
 [English](./README.en.md) | 中文
 
-Rico 维护的 **Agent Skills** 集合，以 **GitHub 公开仓库 + 插件市场（marketplace）** 形式分发，可在 Claude Code 等支持 Skill / Plugin 市场的工具中订阅安装，用于提升写作与内容工作流效率。
+Rico 维护的 **Agent Skills** 集合，以 **GitHub 公开仓库 + 插件市场（marketplace）** 形式分发，可在 Claude Code 等支持 Skill / Plugin 市场的工具中订阅安装，用于提升写作、学习与内容工作流效率。
 
 机器可读索引见 [skills/catalog.yaml](skills/catalog.yaml)。
 
@@ -21,7 +21,7 @@ Rico 维护的 **Agent Skills** 集合，以 **GitHub 公开仓库 + 插件市�
 npx skills add ricoNext/rico-skills
 ```
 
-可先执行 `npx skills add ricoNext/rico-skills --list` 预览；当前仓库仅包含 `**author-writing-style**` 一项可安装 skill。
+可先执行 `npx skills add ricoNext/rico-skills --list` 预览当前可安装 skills。
 
 ### 发布到 ClawHub / OpenClaw
 
@@ -68,7 +68,7 @@ npx skills add ricoNext/rico-skills
 
 | 插件              | 说明                | 包含内容                                 |
 | --------------- | ----------------- | ------------------------------------ |
-| **rico-skills** | 写作与作者风格类 Agent 技能 | 仓库 `skills/` 下全部可安装 skill（见下文「可用技能」） |
+| **rico-skills** | 写作、学习与作者风格类 Agent 技能 | 仓库 `skills/` 下全部可安装 skill（见下文「可用技能」） |
 
 
 ## 更新技能
@@ -98,13 +98,44 @@ npx skills add ricoNext/rico-skills
 - 「总结下面链接文章里的写法，并合并进 `ruan-yifeng` 作者档案」
 - 「按 default 作者档案，把下面这段改写成同一风格」
 
-详细步骤、网页抓取边界与档案模板见 `[skills/author-writing-style/SKILL.md](skills/author-writing-style/SKILL.md)`。
+详细步骤、网页抓取边界与档案模板见 [skills/author-writing-style/SKILL.md](skills/author-writing-style/SKILL.md)。
+
+### 学习与训练 (Learning)
+
+#### tutor
+
+用于学习、练习、检验或长期追踪任意技能与知识主题。它通过真实场景、犯错模拟、漏洞检测、压力测试、反向教学、推理审计和学习路径设计，帮助用户逼近真正掌握。长期学习档案固定写入 `~/.rico-skills/tutor/profiles/<skill_slug>.md`，不写入 skill 安装目录。
+
+**典型用法（自然语言，无固定 slash 命令）**：
+
+- 「用 **tutor** 帮我学 SQL join」
+- “I think I’ve mastered React hooks. Prove me wrong.”
+- 「这段内容很 confusing，帮我找关键句」
+- 「帮我 7 天学会做一个可上线的 Next.js demo」
+- “Pretend you are the student and I teach you Docker”
+
+详细训练模式与长期进度记忆规则见 [skills/tutor/SKILL.md](skills/tutor/SKILL.md)。
+
+### 接口与代码 (API)
+
+#### yapi-sync
+
+从 **YApi** 平台读取接口定义，自动生成符合项目规范的 API 和 TypeScript 类型代码。支持单个接口、多个接口，以及**分类页面**（如 `cat_1686`）下全部接口的批量同步。脚本位于 `skills/yapi-sync/scripts/`，在用户项目的 `.yapi-sync/` 目录读写配置与规范文件。
+
+**典型用法（自然语言，无固定 slash 命令）**：
+
+- 「用 **yapi-sync** 把这个接口生成到项目里：`https://yapi.example.com/project/123/interface/api/456`」
+- 「把 `cat_1686` 分类下的接口批量同步过来」
+- 「同步这几个接口 ID：456, 789, 1011」
+
+详细执行流程、Cookie 鉴权与规范检测见 [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md)。
 
 ## 环境配置
 
-本仓库中的 `**author-writing-style`** 以 Markdown 技能为主，**不强制**配置 API 密钥。运行时作者档案写入用户主目录：
+本仓库中的 **author-writing-style** 与 **tutor** 以 Markdown 技能为主，**不强制**配置 API 密钥。运行时个人档案写入用户主目录：
 
 - `~/.rico-skills/author-writing-style/profiles/`
+- `~/.rico-skills/tutor/profiles/`
 
 请确保运行 Agent 的用户对该路径有读写权限；该目录**不会**随 Git 克隆进入本仓库。
 
@@ -112,7 +143,7 @@ npx skills add ricoNext/rico-skills
 
 ## 自定义扩展
 
-若某个 skill 支持通过侧车文件扩展（例如 `EXTEND.md`），以各 `skills/<skill-id>/SKILL.md` 正文为准。当前 **author-writing-style** 以 `SKILL.md` 为单一事实来源，无单独扩展文件名要求。
+若某个 skill 支持通过侧车文件扩展（例如 `EXTEND.md`），以各 `skills/<skill-id>/SKILL.md` 正文为准。当前 **author-writing-style** 与 **tutor** 均以 `SKILL.md` 为单一事实来源，无单独扩展文件名要求。
 
 ## 免责声明
 

@@ -2,9 +2,9 @@
 
 [English](./README.en.md) | [中文](./README.md)
 
-A public **Agent Skills** marketplace on GitHub. Install via Claude Code (or compatible clients) to use Markdown-based skills such as **author-writing-style**.
+A public **Agent Skills** marketplace on GitHub. Install via Claude Code (or compatible clients) to use Markdown-based skills such as **author-writing-style** and **tutor**.
 
-Machine-readable index: `[skills/catalog.yaml](skills/catalog.yaml)`.
+Machine-readable index: [skills/catalog.yaml](skills/catalog.yaml).
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ Machine-readable index: `[skills/catalog.yaml](skills/catalog.yaml)`.
 npx skills add ricoNext/rico-skills
 ```
 
-Run `npx skills add ricoNext/rico-skills --list` to preview. This repo currently ships only **`author-writing-style`**.
+Run `npx skills add ricoNext/rico-skills --list` to preview the current installable skills.
 
 ### Register marketplace (Claude Code)
 
@@ -55,7 +55,15 @@ Or ask the agent:
 
 ### author-writing-style
 
-Learn writing habits from pasted text or fetched web pages; store profiles under `~/.rico-skills/author-writing-style/profiles/`; rewrite or generate Chinese text to match a profile. See `[skills/author-writing-style/SKILL.md](skills/author-writing-style/SKILL.md)`.
+Learn writing habits from pasted text or fetched web pages; store profiles under `~/.rico-skills/author-writing-style/profiles/`; rewrite or generate Chinese text to match a profile. See [skills/author-writing-style/SKILL.md](skills/author-writing-style/SKILL.md).
+
+### tutor
+
+Tutor users through any skill or knowledge topic with interactive drills, realistic mistake simulations, blind-spot detection, pressure scenarios, reverse teaching, reasoning audits, personalized 7-day learning paths, and long-term progress tracking. Long-term learning profiles are stored under `~/.rico-skills/tutor/profiles/`. See [skills/tutor/SKILL.md](skills/tutor/SKILL.md).
+
+### yapi-sync
+
+Fetch interface definitions from **YApi** platform and auto-generate project-compliant API and TypeScript type code. Supports single, batch, and category page (e.g., `cat_1686`) bulk synchronization. Scripts are located in `skills/yapi-sync/scripts/` and read/write config and style files under the user project's `.yapi-sync/` directory. See [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md).
 
 ## License
 

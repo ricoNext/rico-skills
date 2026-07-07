@@ -4,17 +4,19 @@
     "name": "Rico"
   },
   "metadata": {
-    "description": "Agent skills for writing workflows and author style profiles",
+    "description": "Agent skills for writing, tutoring, API sync, and author style profiles",
     "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "rico-skills",
-      "description": "Writing and author-style skills (Markdown SKILL.md)",
+      "description": "Writing, tutoring, API sync, and author-style skills (Markdown SKILL.md)",
       "source": "./",
       "strict": true,
       "skills": [
-        "./skills/author-writing-style"
+        "./skills/author-writing-style",
+        "./skills/tutor",
+        "./skills/yapi-sync"
       ]
     }
   ]
