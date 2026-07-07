@@ -116,6 +116,20 @@ npx skills add ricoNext/rico-skills
 
 详细训练模式与长期进度记忆规则见 [skills/tutor/SKILL.md](skills/tutor/SKILL.md)。
 
+### 接口与代码 (API)
+
+#### yapi-sync
+
+从 **YApi** 平台读取接口定义，自动生成符合项目规范的 API 和 TypeScript 类型代码。支持单个接口、多个接口，以及**分类页面**（如 `cat_1686`）下全部接口的批量同步。脚本位于 `skills/yapi-sync/scripts/`，在用户项目的 `.yapi-sync/` 目录读写配置与规范文件。
+
+**典型用法（自然语言，无固定 slash 命令）**：
+
+- 「用 **yapi-sync** 把这个接口生成到项目里：`https://yapi.example.com/project/123/interface/api/456`」
+- 「把 `cat_1686` 分类下的接口批量同步过来」
+- 「同步这几个接口 ID：456, 789, 1011」
+
+详细执行流程、Cookie 鉴权与规范检测见 [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md)。
+
 ## 环境配置
 
 本仓库中的 **author-writing-style** 与 **tutor** 以 Markdown 技能为主，**不强制**配置 API 密钥。运行时个人档案写入用户主目录：
