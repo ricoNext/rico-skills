@@ -168,39 +168,94 @@ ${RESOLVE_ONLY} https://yapi.example.com/project/{projectId}/interface/api/cat_{
 ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}
 ```
 
-脚本会：
-1. 扫描用户项目的 `src/api/`、`lib/api/` 等目录
-2. 分析现有 API 文件的代码模式
-3. 推断代码规范（存放位置、类型风格、响应包装、命名规范等）
-4. 在 **用户项目** 中生成 `{projectRoot}/.yapi-sync/api-style.md`
+**脚本检测流程（优先级从高到低）**：
 
-**示例输出**：
+1. **尝试从项目文档提取规范**
+   - 检查 `AGENTS.md` / `CLAUDE.md` / `CODEBUDDY.md`
+   - 查找包含 API 规范的章节（关键词：API、接口、规范、convention 等）
+   - 提取规范说明并生成 `api-style.md`
+
+2. **文档中无规范时，脚本返回退出码 1**
+   - Agent 需要**自己分析项目代码**
+   - 检查项目中现有 API 文件（可能在 `src/api`、`lib/api`、`services`、`app/api` 等目录）
+   - 分析现有代码的风格（命名、类型定义、响应包装等）
+   - **手动创建** `{projectRoot}/.yapi-sync/api-style.md` 文件
+
+**路径 A：从文档提取成功（退出码 0）**
+
+示例输出：
 ```
-🔍 扫描项目代码规范...
+🔍 检测项目 API 代码规范...
    项目根目录：/path/to/project
-   找到 8 个 API 文件
-✅ 规范检测完成，已保存至：
-   /path/to/project/.yapi-sync/api-style.md
+
+📄 检查项目文档...
+   - 发现 CLAUDE.md
+   ✅ 从 CLAUDE.md 中找到 API 规范（章节：API 接口规范）
+
+📝 生成代码规范文件...
+   ✅ 已保存至：/path/to/project/.yapi-sync/api-style.md
+
+📖 请检查生成的文件，必要时编辑「[样本代码]」块来调整规范。
 ```
+
+生成的 `api-style.md` 包含：
+- 从文档提取的原始规范说明
+- 可编辑的「[样本代码]」块（存放位置、类型风格、响应包装、命名规范）
+- Agent 补充说明（如果原始规范不够明确，需要检查现有代码）
+
+**路径 B：文档中无规范（退出码 1，需要 Agent 介入）**
+
+示例输出：
+```
+🔍 检测项目 API 代码规范...
+   项目根目录：/path/to/project
+
+📄 检查项目文档...
+   ⚠️  未在文档中找到 API 规范说明
+
+⚙️  退出码：1（需要 Agent 分析项目代码）
+
+提示：Agent 应该：
+  1. 检查项目中现有的 API 文件（可能在 src/api、lib/api、services 等目录）
+  2. 分析现有代码的风格（命名、类型定义、响应包装等）
+  3. 手动创建 .yapi-sync/api-style.md 文件
+
+或者在 AGENTS.md / CLAUDE.md / CODEBUDDY.md 中添加 API 规范章节，再重新运行本脚本。
+```
+
+**Agent 处理退出码 1 的步骤**：
+
+1. 检查用户项目中是否有现有 API 文件：
+   - 用 `find {projectRoot} -type f \( -name "*.ts" -o -name "*.js" \) | grep -E "(api|service)" | head -10`
+   - 或问用户："你的项目 API 文件通常放在哪里？"
+
+2. 如果找到现有文件，读取 2-3 个样本文件，分析：
+   - API 存放目录（如 `src/api`、`services`、`app/api`）
+   - 类型定义风格（内联 vs 独立 types 文件）
+   - 响应包装方式（`Response<T>`、`ApiResponse<T>` 等）
+   - 命名规范（camelCase vs snake_case）
+   - 使用的请求库（axios / fetch / 自定义 request）
+
+3. 如果项目无现有 API 文件：
+   - 询问用户偏好的代码规范
+   - 或使用默认规范（`src/api`、内联类型、camelCase）
+
+4. 手动创建 `{projectRoot}/.yapi-sync/api-style.md` 文件，填写分析出的规范
 
 **文件位置**（用户项目中）：
 ```
 project/
 ├── .yapi-sync/
-│   └── api-style.md          # 自动生成的代码规范定义
+│   └── api-style.md          # 从文档提取或 Agent 手动创建
 ├── src/
-│   └── api/
-└── package.json
+│   └── api/                  # 现有 API 文件（如果有）
+└── CLAUDE.md                 # 可选：包含 API 规范章节
 ```
 
 **用户可以**：
-- 直接查看推断的规范（检测置信度显示在文件顶部）
-- 编辑文件中的「[样本代码]」块来调整规范
+- 在项目文档（`AGENTS.md` / `CLAUDE.md` / `CODEBUDDY.md`）中添加 API 规范章节，脚本会自动提取
+- 直接编辑 `.yapi-sync/api-style.md` 中的「[样本代码]」块来调整规范
 - 删除该文件后重新运行脚本以重新检测
-
-**检测失败处理**：
-- 若用户项目中无现有 API 文件，脚本提示使用默认规范
-- 用户可手动编辑 `.yapi-sync/api-style.md` 定义规范
 
 #### 1.2 获取 Cookie（手动方式）
 
