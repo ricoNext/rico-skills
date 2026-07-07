@@ -8,3 +8,10 @@ skills:
       从纯文本或网页 URL（抓取正文后）归纳行文习惯，按作者写入固定目录 ~/.rico-skills/author-writing-style/profiles；
       或按档案改写/生成中文内容。不含多本地文件与目录批量导入。
     tags: [writing, chinese, style, rewrite]
+  - id: tutor
+    path: skills/tutor
+    name: 互动学习导师
+    description: >-
+      指导用户学习、练习、检验或长期追踪任意技能与知识主题；通过真实场景、犯错模拟、漏洞检测、
+      压力测试、反向教学、推理审计和学习路径设计帮助用户逼近真正掌握。
+    tags: [learning, tutoring, practice, mastery]
