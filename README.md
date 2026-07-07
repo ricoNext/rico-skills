@@ -61,16 +61,6 @@ npx skills add ricoNext/rico-skills
 
 > 请帮我安装 github.com/ricoNext/rico-skills 中的 Skills
 
-### 可用插件
-
-当前 marketplace 设计为暴露**一个聚合插件**，避免同一 skill 被重复注册；其中包含本仓库内全部可分发 skill。
-
-
-| 插件              | 说明                | 包含内容                                 |
-| --------------- | ----------------- | ------------------------------------ |
-| **rico-skills** | 写作、学习与作者风格类 Agent 技能 | 仓库 `skills/` 下全部可安装 skill（见下文「可用技能」） |
-
-
 ## 更新技能
 
 将技能更新到最新版本：
