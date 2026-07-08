@@ -108,6 +108,16 @@ npx skills add ricoNext/rico-skills
 
 ### 接口与代码 (API)
 
+#### gacp
+
+快速提交并推送代码的命令型 skill（`git add .` + `git commit` + `git push`）。执行时会忽略对话上下文，仅按固定步骤工作：先检查 `git status`，无改动则结束；有改动则暂存全部、根据改动内容自动生成**中文 Conventional Commit** 提交信息并提交，最后推送到远程。需 `git_write` 与 `network` 权限。
+
+**典型用法（slash 命令）**：
+
+- 「`/gacp`」
+
+若 pre-commit 钩子（format/lint）失败，先修复或使用 `npx ultracite format` 后再次执行。详细步骤与提交类型说明见 [skills/gacp/SKILL.md](skills/gacp/SKILL.md)。
+
 #### yapi-sync
 
 从 **YApi** 平台读取接口定义，自动生成符合项目规范的 API 和 TypeScript 类型代码。支持单个接口、多个接口，以及**分类页面**（如 `cat_1686`）下全部接口的批量同步。脚本位于 `skills/yapi-sync/scripts/`，在用户项目的 `.yapi-sync/` 目录读写配置与规范文件。
