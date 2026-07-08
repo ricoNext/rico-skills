@@ -21,3 +21,9 @@ skills:
     description: >-
       从 YApi 读取接口定义并生成/更新项目中的 API 和 TypeScript 类型，支持单个、批量及分类列表同步。
     tags: [api, yapi, typescript, codegen]
+  - id: gacp
+    path: skills/gacp
+    name: 快速提交并推送
+    description: >-
+      快速提交并推送代码（git add . + git commit + git push），由 Agent 根据改动自动生成中文 Conventional Commit 信息。
+    tags: [git, commit, push, conventional-commits]
