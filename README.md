@@ -6,7 +6,7 @@ Rico 维护的 **Agent Skills** 集合，以 **GitHub 公开仓库 + 插件市�
 
 机器可读索引见 [skills/catalog.yaml](skills/catalog.yaml)。
 
-## 前置要求
+## 前置要求1
 
 - 已安装 **Node.js**（用于可选的快速安装命令 `npx skills …`，以对应 CLI 官方说明为准）。
 - 已安装 **Claude Code**（或其它支持「从 GitHub 添加插件市场」的 Agent 客户端），且能访问 **GitHub**。
