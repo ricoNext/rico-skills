@@ -16,7 +16,8 @@
       "skills": [
         "./skills/author-writing-style",
         "./skills/tutor",
-        "./skills/yapi-sync"
+        "./skills/yapi-sync",
+        "./skills/gacp"
       ]
     }
   ]
