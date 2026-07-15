@@ -9,11 +9,11 @@
 **原因**：Cookie 过期了
 
 **解决**：
-手动更新 `.yapi-sync/config.json` 中的 `cookie` 字段：
+手动更新 `.yapi-sync/cookie.json` 中的 `cookie` 字段：
 1. 在浏览器中重新登录 YApi
 2. 打开开发者工具 (F12) > Application > Cookies
 3. 复制 `_yapi_token` 和 `_yapi_uid` 的值
-4. 更新配置文件中的 `cookie` 字段
+4. 更新 Cookie 文件中的 `cookie` 字段
 
 ---
 
@@ -146,7 +146,7 @@ export const getUser = (data: GetUserRequest) =>
 
 ### Cookie 保存位置错误
 
-**症状**：`config.json` 保存到了错误的位置
+**症状**：`cookie.json` 保存到了错误的位置
 
 **原因**：
 - 项目路径有误
@@ -179,7 +179,7 @@ cat interfaces.json | jq .
 
 ```bash
 # 测试 YApi 连接
-curl -H "Cookie: $(cat /path/to/project/.yapi-sync/config.json | jq -r '.cookie')" \
+curl -H "Cookie: $(cat /path/to/project/.yapi-sync/cookie.json | jq -r '.cookie')" \
   "$(cat /path/to/project/.yapi-sync/config.json | jq -r '.baseUrl')/api/interface/get?id=123"
 ```
 
@@ -199,7 +199,7 @@ head -20 generated-api/user.ts
 
 - [ ] Node.js 版本 >= 18
 - [ ] 依赖已安装：`npm install --prefix skills/yapi-sync/scripts`
-- [ ] Cookie 已配置：`cat .yapi-sync/config.json`
+- [ ] Cookie 已配置：`cat .yapi-sync/cookie.json`
 - [ ] Cookie 有效（登录新的没有过期）
 - [ ] 接口 ID/分类 ID 正确
 - [ ] 项目路径正确
@@ -219,4 +219,4 @@ head -20 generated-api/user.ts
 - 完整的错误信息
 - 你运行的命令
 - 操作系统和 Node.js 版本
-- `.yapi-sync/config.json` 中的 baseUrl（不要提交 cookie）
+- `.yapi-sync/config.json` 中的 baseUrl（不要提交 `.yapi-sync/cookie.json`）

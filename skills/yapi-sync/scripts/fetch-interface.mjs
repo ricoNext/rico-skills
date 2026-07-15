@@ -13,7 +13,7 @@ const printUsage = () => {
   - 分类 URL（/interface/api/cat_{catId}）或 cat_{catId} / cat:{catId}
 
 选项:
-  --project <projectRoot>  用户项目根目录，配置读写到 .yapi-sync/config.json
+  --project <projectRoot>  用户项目根目录，配置读写到 .yapi-sync/config.json，Cookie 读写到 .yapi-sync/cookie.json
   --resolve-only           仅解析并展开分类，输出接口 ID 列表，不拉取详情`);
 };
 

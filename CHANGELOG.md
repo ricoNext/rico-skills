@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### 重构
+
+- yapi-sync 将 Cookie 从 `.yapi-sync/config.json` 拆分到 `.yapi-sync/cookie.json`，配置文件仅保存 `baseUrl` 和 `.gitignore` 更新状态
+- yapi-sync 首次使用时自动将 `.yapi-sync/cookie.json` 写入用户项目 `.gitignore`
+
 ## 0.2.0 - 2026-06-22
 
 ### 新功能
@@ -12,7 +19,7 @@
 
 - yapi-sync 规范文件迁移到用户项目目录（`.yapi-sync/api-style.md`）
 - yapi-sync 配置文件迁移到用户项目目录（`.yapi-sync/config.json`）
-- yapi-sync 移除浏览器自动获取 Cookie 功能，改为手动方式：Cookie 未配置或失效时提示用户手动获取并写入配置文件，不再自动打开浏览器
+- yapi-sync 移除浏览器自动获取 Cookie 功能，改为手动方式：Cookie 未配置或失效时提示用户手动获取，不再自动打开浏览器
 
 ### 文档
 

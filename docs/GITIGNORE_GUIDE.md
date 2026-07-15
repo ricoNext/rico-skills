@@ -3,10 +3,9 @@
 将以下内容添加到项目的 `.gitignore`：
 
 ```gitignore
-# YApi Sync 配置和日志
-.yapi-sync/config.json          # ⚠️ 包含 Cookie，不要提交
+# YApi Sync Cookie 和日志
+.yapi-sync/cookie.json          # ⚠️ 包含 Cookie，不要提交
 .yapi-sync/logs/                # 运行日志
-.yapi-sync/*.json               # 临时 JSON 文件
 
 # 生成的 API 代码（可选，取决于你的工作流）
 # 如果希望生成的代码受版本控制，删除这些行
@@ -25,8 +24,8 @@ interfaces.json                 # 临时接口定义文件
 ### 如果生成的代码需要版本控制
 
 ```gitignore
-# 只忽略配置和日志
-.yapi-sync/config.json
+# 只忽略 Cookie 和日志
+.yapi-sync/cookie.json
 .yapi-sync/logs/
 interfaces.json
 ```
@@ -47,11 +46,12 @@ src/api/
 
 ✅ **应该提交**：
 - `SKILL.md` - Skill 定义
+- `.yapi-sync/config.json` - YApi 基础配置（不包含 Cookie）
 - `.yapi-sync/api-style.md` - 代码规范
 - `package.json` - 脚本依赖
 
 ❌ **不应该提交**：
-- `.yapi-sync/config.json` - 包含 Cookie
+- `.yapi-sync/cookie.json` - 包含 Cookie
 - `.yapi-sync/logs/*` - 本地日志
 - 未提交到代码库的生成文件
 
@@ -75,11 +75,11 @@ export YAPI_BASE_URL="https://yapi.example.com"
 ## 查看 Git 是否跟踪了 Cookie
 
 ```bash
-# 检查是否意外提交了 config.json
-git log --all -- .yapi-sync/config.json
+# 检查是否意外提交了 cookie.json
+git log --all -- .yapi-sync/cookie.json
 
 # 如果已提交，立即重置 Cookie
 # 并从 Git 历史中删除该文件
-git rm --cached .yapi-sync/config.json
+git rm --cached .yapi-sync/cookie.json
 git commit -m "Remove accidentally committed cookie"
 ```

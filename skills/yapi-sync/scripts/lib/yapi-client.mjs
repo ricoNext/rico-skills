@@ -100,11 +100,11 @@ export const getInterfaceDetail = (interfaceId, options = {}) => {
 
 const throwAuthRequired = (config) => {
     const error = new Error(
-        `YApi Cookie 未配置或已失效，请手动获取 Cookie 并写入配置文件。\n` +
+        `YApi Cookie 未配置或已失效，请手动获取 Cookie 并写入 Cookie 文件。\n` +
         `  1. 在浏览器中访问 ${config.baseUrl} 并登录\n` +
         `  2. 打开开发者工具 (F12) > Application > Cookies\n` +
         `  3. 复制 _yapi_token 和 _yapi_uid 的值，格式：_yapi_token=xxx; _yapi_uid=xxx\n` +
-        `  4. 写入 .yapi-sync/config.json 的 cookie 字段`
+        `  4. 写入 .yapi-sync/cookie.json 的 cookie 字段`
     );
     error.code = "YAPI_AUTH_REQUIRED";
     throw error;

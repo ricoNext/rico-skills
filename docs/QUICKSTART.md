@@ -29,12 +29,18 @@ cat /path/to/your/project/.yapi-sync/api-style.md
 1. 打开开发者工具 (F12) > Application > Cookies
 2. 复制 `_yapi_token` 和 `_yapi_uid` 的值
 
-创建配置文件：
+创建配置文件和 Cookie 文件：
 ```bash
 mkdir -p /path/to/your/project/.yapi-sync
 cat > /path/to/your/project/.yapi-sync/config.json << 'EOF'
 {
   "baseUrl": "https://your-yapi.com",
+  "cookieGitignoreUpdated": false
+}
+EOF
+
+cat > /path/to/your/project/.yapi-sync/cookie.json << 'EOF'
+{
   "cookie": "_yapi_token=xxx; _yapi_uid=xxx"
 }
 EOF
@@ -67,13 +73,14 @@ node skills/yapi-sync/scripts/generate-api.mjs interfaces.json /path/to/your/pro
 ```
 your-project/
 ├── .yapi-sync/
-│   ├── config.json          # ⚠️ 不要提交到 Git
+│   ├── config.json          # ✅ 可以提交
+│   ├── cookie.json          # ⚠️ 不要提交到 Git
 │   └── api-style.md         # ✅ 可以提交
 ├── src/
 │   └── api/
 │       ├── user.ts          # 生成的文件
 │       └── product.ts       # 生成的文件
-└── .gitignore              # 添加: .yapi-sync/config.json
+└── .gitignore              # 自动添加: .yapi-sync/cookie.json
 ```
 
 ## ⚙️ 自定义代码规范
@@ -98,10 +105,10 @@ export const getUser = (data: GetUserRequest) =>
 ## 🆘 常见问题
 
 ### Cookie 过期了？
-手动更新 `.yapi-sync/config.json` 中的 `cookie` 字段即可：
+手动更新 `.yapi-sync/cookie.json` 中的 `cookie` 字段即可：
 1. 重新在浏览器中登录 YApi
 2. 复制新的 `_yapi_token` 和 `_yapi_uid`
-3. 更新配置文件
+3. 更新 Cookie 文件
 
 ### 需要重新检测规范？
 删除 `.yapi-sync/api-style.md`，然后重新运行 `detect-codegen-style.mjs`
@@ -125,6 +132,6 @@ node skills/yapi-sync/scripts/fetch-interface.mjs --project /path/to/project cat
 
 **提示**：添加这些到 `.gitignore`：
 ```
-.yapi-sync/config.json
+.yapi-sync/cookie.json
 .yapi-sync/logs/
 ```

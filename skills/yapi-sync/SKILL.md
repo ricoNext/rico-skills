@@ -12,7 +12,7 @@ description: 从 YApi 读取接口定义并生成/更新项目中的 API 和 Typ
 
 **重要**：Cookie 获取、接口拉取、代码生成、规范检测脚本位于 `{baseDir}/scripts/`。
 
-所有脚本都支持在用户项目的 `.yapi-sync/` 目录中读写配置和规范文件。
+所有脚本都支持在用户项目的 `.yapi-sync/` 目录中读写配置、Cookie 和规范文件。
 
 **Agent 执行说明**：
 
@@ -145,20 +145,30 @@ ${RESOLVE_ONLY} https://yapi.example.com/project/{projectId}/interface/api/cat_{
 
 ### 1. Cookie 配置与验证
 
-#### 1.1 检查配置文件与代码规范
+#### 1.1 检查配置文件、Cookie 文件与代码规范
 
-读取 `{baseDir}/config.json`：
-- **文件不存在** → 创建默认配置文件，执行步骤 1.1.5
-- **cookie 为空** → 执行步骤 1.2
-- **cookie 已配置** → 验证 cookie 有效性，无效则执行步骤 1.2，有效则继续执行步骤 2.1
+读取 `{projectRoot}/.yapi-sync/config.json` 和 `{projectRoot}/.yapi-sync/cookie.json`：
+- **配置文件不存在** → 创建默认配置文件，执行步骤 1.1.5
+- **Cookie 文件不存在或 cookie 为空** → 执行步骤 1.2
+- **Cookie 已配置** → 验证 cookie 有效性，无效则执行步骤 1.2，有效则继续执行步骤 2.1
+- **`cookieGitignoreUpdated` 为 `false`** → 自动将 `.yapi-sync/cookie.json` 添加到 `{projectRoot}/.gitignore`，然后把该字段更新为 `true`
 
 配置文件格式：
 ```json
 {
 	"baseUrl": "https://yapi.example.com",
+	"cookieGitignoreUpdated": true
+}
+```
+
+Cookie 文件格式：
+```json
+{
 	"cookie": "yapi的cookie值"
 }
 ```
+
+`config.json` 可提交到仓库；`cookie.json` 保存本地鉴权信息，不应提交。
 
 #### 1.1.5 首次运行：自动检测代码规范
 
@@ -246,6 +256,8 @@ ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot
 ```
 project/
 ├── .yapi-sync/
+│   ├── config.json           # YApi 基础配置，可提交
+│   ├── cookie.json           # Cookie 本地文件，不提交
 │   └── api-style.md          # 从文档提取或 Agent 手动创建
 ├── src/
 │   └── api/                  # 现有 API 文件（如果有）
@@ -262,11 +274,11 @@ project/
 当 cookie 未配置或失效时，直接提示用户手动提供 Cookie：
 
 ```
-YApi Cookie 未配置或已失效，请手动获取 Cookie 并写入配置文件。
+YApi Cookie 未配置或已失效，请手动获取 Cookie 并写入 Cookie 文件。
   1. 在浏览器中访问 {baseUrl} 并登录
   2. 打开开发者工具 (F12) > Application > Cookies
   3. 复制 _yapi_token 和 _yapi_uid 的值，格式：_yapi_token=xxx; _yapi_uid=xxx
-  4. 写入 .yapi-sync/config.json 的 cookie 字段
+  4. 写入 .yapi-sync/cookie.json 的 cookie 字段
 ```
 
 **步骤 1**: 引导用户获取 Cookie
@@ -300,7 +312,7 @@ ask_user_question({
 **步骤 3**: 接收用户输入的 Cookie，验证包含必要字段（`_yapi_token` 和 `_yapi_uid`）
 
 - **验证失败** → 提示格式错误，重新要求粘贴
-- **验证成功** → 写入 `{projectRoot}/.yapi-sync/config.json`
+- **验证成功** → 写入 `{projectRoot}/.yapi-sync/cookie.json`，并确保 `.gitignore` 已包含 `.yapi-sync/cookie.json`
 
 **步骤 4**: 继续执行步骤 2.1
 
@@ -553,7 +565,7 @@ biome check {outputDir}
 | 无有效 YApi 路径 | 抛出错误并退出 |
 | 分类 ID 无效或无权访问 | 记录失败原因，若仅含该分类则退出 |
 | 分类下无接口 | 提示后退出 |
-| Cookie 未配置/失效 | 提示用户手动获取 Cookie 并写入配置文件 |
+| Cookie 未配置/失效 | 提示用户手动获取 Cookie 并写入 `.yapi-sync/cookie.json` |
 | 自动登录失败 | 根据原因提示：凭证错误/MFA 要求/表单变更/网络问题，建议手动获取 Cookie |
 | 单个接口请求失败 | 记录失败，继续处理其他接口 |
 | 类型冲突 | 提示用户选择处理方式 |

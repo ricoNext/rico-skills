@@ -23,7 +23,6 @@ rico-skills/
 │   │   └── profiles/               # Read-only reference profiles (no runtime writes)
 │   ├── yapi-sync/                  # YApi interface sync skill (in development)
 │   │   ├── SKILL.md                # Cookie auth & batch API generation flow
-│   │   ├── config.json             # Runtime config (baseUrl, cookie)
 │   │   └── scripts/                # Node.js automation scripts
 │   │       ├── fetch-interface.mjs # YApi API fetching script
 │   │       ├── login.mjs           # Auto-login script (planned)
@@ -76,8 +75,10 @@ node skills/yapi-sync/scripts/fetch-interface.mjs --resolve-only <category-url>
 
 **View/update runtime configuration:**
 ```bash
-cat skills/yapi-sync/config.json
-# Stores: baseUrl, cookie (auto-managed by scripts)
+cat /path/to/project/.yapi-sync/config.json
+# Stores: baseUrl and cookieGitignoreUpdated
+cat /path/to/project/.yapi-sync/cookie.json
+# Stores: local Cookie only; do not commit
 ```
 
 ## Skill Development Workflow
@@ -168,5 +169,5 @@ TaskUpdate 1 --status completed
 ## File Patterns to Avoid
 
 - Do **not** write personal data or user profiles to `skills/<skill-id>/profiles/` at runtime
-- Do **not** commit `skills/yapi-sync/config.json` with real cookies or credentials
+- Do **not** commit user project `.yapi-sync/cookie.json` with real cookies or credentials
 - Do **not** modify marketplace.json without understanding skill listing impact
