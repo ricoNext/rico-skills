@@ -1,5 +1,5 @@
 ---
-name: /gacp
+name: gacp
 id: gacp
 category: Git
 description: 快速提交并推送代码（git add . + git commit + git push），由 Agent 根据改动自动生成中文 Conventional Commit 信息。
