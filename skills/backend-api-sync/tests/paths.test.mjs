@@ -21,4 +21,5 @@ test('isAbsoluteExistingDirectory rejects relative and missing directories', () 
   assert.equal(isAbsoluteExistingDirectory('relative/service'), false);
   assert.equal(isAbsoluteExistingDirectory('/missing/service'), false);
   assert.equal(isAbsoluteExistingDirectory(null), false);
+  assert.equal(isAbsoluteExistingDirectory(42), false);
 });
