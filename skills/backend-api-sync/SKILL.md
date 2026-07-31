@@ -40,18 +40,22 @@ node {baseDir}/scripts/validate-config.mjs {frontendRoot}
 
 该预检会校验配置 JSON、`projects` 非空、项目字段、重复名称，以及每个后端 `path` 是否为存在的绝对目录。命令返回错误时，直接把错误报告给用户并停止；不得安装依赖、扫描规则或解析路由。`rulePath` 在这个阶段允许为空，因为它会在项目校验通过后的后续初始化中生成。
 
-## 已配置项目
+## 规则路径
 
-仅当配置已包含有效后端项目时，才安装脚本依赖（如果缺失）：
-
-```bash
-npm install --prefix {baseDir}/scripts
-```
-
-随后根据配置中的项目生成并回填 `rulePath`，脚本会将含本机绝对路径的配置文件加入 `.gitignore`，并优先从 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md` 或现有 API 代码发现规则；没有可用规范时才生成 `.rico-skill/backend-api-sync-rules.md`。规则文档可提交。
+仅当 `projects` 预检成功后，才处理 `rulePath`：
 
 ```bash
 node {baseDir}/scripts/finalize-config.mjs {frontendRoot}
+```
+
+若配置中的相对 `rulePath` 指向一个已存在文件，保留它。否则，脚本依次检查 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md` 和现有 API 代码；发现类似规范则回填其相对路径，仍未发现才创建 `.rico-skill/backend-api-sync-rules.md`。这一步会将包含本机路径的配置加入 `.gitignore`；规则文档可提交。
+
+## 已配置项目
+
+只有 `rulePath` 已处理完成后，才安装脚本依赖（如果缺失）：
+
+```bash
+npm install --prefix {baseDir}/scripts
 ```
 
 ## 同步流程

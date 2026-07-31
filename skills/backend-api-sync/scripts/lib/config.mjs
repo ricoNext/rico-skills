@@ -53,11 +53,29 @@ export function initializeConfig(projectRoot, projects) {
   return config;
 }
 
+function resolveConfiguredRulePath(projectRoot, rulePath) {
+  if (rulePath) {
+    const resolvedProjectRoot = path.resolve(projectRoot);
+    const resolvedRulePath = typeof rulePath === 'string' ? path.resolve(projectRoot, rulePath) : '';
+    if (typeof rulePath !== 'string' || path.isAbsolute(rulePath) || !(resolvedRulePath === resolvedProjectRoot || resolvedRulePath.startsWith(`${resolvedProjectRoot}${path.sep}`))) {
+      throw new Error('rulePath 必须是相对前端项目根目录的路径');
+    }
+    if (fs.existsSync(resolvedRulePath) && fs.statSync(resolvedRulePath).isFile()) return rulePath;
+  }
+  return discoverRules(projectRoot, getRuntimePaths(projectRoot).defaultRulePath).rulePath;
+}
+
 export function finalizeConfig(projectRoot) {
   const { configPath } = getRuntimePaths(projectRoot);
   if (!fs.existsSync(configPath)) throw new Error(`未找到配置文件: ${configPath}`);
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  return initializeConfig(projectRoot, config.projects);
+  if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error('配置文件必须是对象');
+  assertOnlyKeys(config, CONFIG_KEYS, '配置文件');
+  validateProjects(config.projects);
+  const finalized = { projects: config.projects, rulePath: resolveConfiguredRulePath(projectRoot, config.rulePath) };
+  fs.writeFileSync(configPath, `${JSON.stringify(finalized, null, 2)}\n`);
+  ensureGitignoreEntry(projectRoot, '.rico-skill/backend-api-sync.config');
+  return finalized;
 }
 
 export function validateConfiguredProjects(projectRoot) {

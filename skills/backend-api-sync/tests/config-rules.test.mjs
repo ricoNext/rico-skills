@@ -47,6 +47,30 @@ test('finalizeConfig processes a user-filled template only after a later invocat
   assert.equal(finalizeConfig(frontendRoot).rulePath, '.rico-skill/backend-api-sync-rules.md');
 });
 
+test('finalizeConfig preserves an existing configured rulePath', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  const rulePath = '.rico-skill/custom-rules.md';
+  fs.mkdirSync(path.dirname(path.join(frontendRoot, rulePath)), { recursive: true });
+  fs.writeFileSync(path.join(frontendRoot, rulePath), '# Existing rules\n');
+  fs.writeFileSync(path.join(frontendRoot, '.rico-skill/backend-api-sync.config'), JSON.stringify({
+    projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath,
+  }));
+
+  assert.equal(finalizeConfig(frontendRoot).rulePath, rulePath);
+  assert.equal(fs.existsSync(path.join(frontendRoot, '.rico-skill/backend-api-sync-rules.md')), false);
+});
+
+test('finalizeConfig discovers a similar document when configured rulePath is missing', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  ensureConfigTemplate(frontendRoot);
+  fs.writeFileSync(path.join(frontendRoot, 'CLAUDE.md'), '# API 规范\n使用 request。\n');
+  fs.writeFileSync(path.join(frontendRoot, '.rico-skill/backend-api-sync.config'), JSON.stringify({
+    projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath: '.rico-skill/missing-rules.md',
+  }));
+
+  assert.equal(finalizeConfig(frontendRoot).rulePath, 'CLAUDE.md');
+});
+
 test('validateConfiguredProjects checks an existing config before later work', () => {
   const { frontendRoot, backendRoot } = makeProject();
   ensureConfigTemplate(frontendRoot);
