@@ -60,6 +60,16 @@ export function finalizeConfig(projectRoot) {
   return initializeConfig(projectRoot, config.projects);
 }
 
+export function validateConfiguredProjects(projectRoot) {
+  const { configPath } = getRuntimePaths(projectRoot);
+  if (!fs.existsSync(configPath)) throw new Error(`未找到配置文件: ${configPath}`);
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error('配置文件必须是对象');
+  assertOnlyKeys(config, CONFIG_KEYS, '配置文件');
+  validateProjects(config.projects);
+  return config.projects;
+}
+
 export function readConfig(projectRoot) {
   const { configPath } = getRuntimePaths(projectRoot);
   if (!fs.existsSync(configPath)) throw new Error(`未找到配置文件: ${configPath}`);

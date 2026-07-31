@@ -32,7 +32,13 @@ node {baseDir}/scripts/ensure-config.mjs {frontendRoot}
 
 要求用户将 `projects` 填写为一个或多个 `{ name, language, path }` 对象。`path` 必须是存在的绝对路径；首版 `language` 填 `java`。`rulePath` 由后续初始化自动生成，用户不需要填写。
 
-配置文件存在但 `projects` 为空或不完整时，同样只引导用户补全并停止。
+配置文件存在时，必须先执行 `projects` 预检：
+
+```bash
+node {baseDir}/scripts/validate-config.mjs {frontendRoot}
+```
+
+该预检会校验配置 JSON、`projects` 非空、项目字段、重复名称，以及每个后端 `path` 是否为存在的绝对目录。命令返回错误时，直接把错误报告给用户并停止；不得安装依赖、扫描规则或解析路由。`rulePath` 在这个阶段允许为空，因为它会在项目校验通过后的后续初始化中生成。
 
 ## 已配置项目
 

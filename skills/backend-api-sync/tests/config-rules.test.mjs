@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { ensureConfigTemplate, finalizeConfig, initializeConfig, readConfig, validateProjects } from '../scripts/lib/config.mjs';
+import { ensureConfigTemplate, finalizeConfig, initializeConfig, readConfig, validateConfiguredProjects, validateProjects } from '../scripts/lib/config.mjs';
 import { discoverRules, readRules } from '../scripts/lib/rules.mjs';
 
 function makeProject() {
@@ -45,6 +45,17 @@ test('finalizeConfig processes a user-filled template only after a later invocat
   fs.writeFileSync(configPath, JSON.stringify({ projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath: '' }));
 
   assert.equal(finalizeConfig(frontendRoot).rulePath, '.rico-skill/backend-api-sync-rules.md');
+});
+
+test('validateConfiguredProjects checks an existing config before later work', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  ensureConfigTemplate(frontendRoot);
+  const configPath = path.join(frontendRoot, '.rico-skill/backend-api-sync.config');
+  fs.writeFileSync(configPath, JSON.stringify({ projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath: '' }));
+  assert.deepEqual(validateConfiguredProjects(frontendRoot), [{ name: 'backend', language: 'java', path: backendRoot }]);
+
+  fs.writeFileSync(configPath, JSON.stringify({ projects: [{ name: 'backend', language: 'java', path: './relative' }], rulePath: '' }));
+  assert.throws(() => validateConfiguredProjects(frontendRoot), /绝对目录/);
 });
 
 test('discoverRules preserves an existing API convention document', () => {
