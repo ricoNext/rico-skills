@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { initializeConfig, readConfig, validateProjects } from '../scripts/lib/config.mjs';
+import { ensureConfigTemplate, finalizeConfig, initializeConfig, readConfig, validateProjects } from '../scripts/lib/config.mjs';
 import { discoverRules, readRules } from '../scripts/lib/rules.mjs';
 
 function makeProject() {
@@ -24,6 +24,27 @@ test('initializeConfig writes a project-local config and ignores only that confi
   assert.deepEqual(readConfig(frontendRoot), config);
   assert.match(fs.readFileSync(path.join(frontendRoot, '.gitignore'), 'utf8'), /^\.rico-skill\/backend-api-sync\.config$/m);
   assert.equal(fs.existsSync(path.join(frontendRoot, config.rulePath)), true);
+});
+
+test('ensureConfigTemplate only creates an editable configuration template on first use', () => {
+  const { frontendRoot } = makeProject();
+  const result = ensureConfigTemplate(frontendRoot);
+  const configPath = path.join(frontendRoot, '.rico-skill/backend-api-sync.config');
+
+  assert.equal(result.created, true);
+  assert.deepEqual(JSON.parse(fs.readFileSync(configPath, 'utf8')), { projects: [], rulePath: '' });
+  assert.equal(fs.existsSync(path.join(frontendRoot, '.rico-skill/backend-api-sync-rules.md')), false);
+  assert.equal(fs.existsSync(path.join(frontendRoot, '.gitignore')), false);
+  assert.deepEqual(ensureConfigTemplate(frontendRoot), { created: false, configPath });
+});
+
+test('finalizeConfig processes a user-filled template only after a later invocation', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  ensureConfigTemplate(frontendRoot);
+  const configPath = path.join(frontendRoot, '.rico-skill/backend-api-sync.config');
+  fs.writeFileSync(configPath, JSON.stringify({ projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath: '' }));
+
+  assert.equal(finalizeConfig(frontendRoot).rulePath, '.rico-skill/backend-api-sync-rules.md');
 });
 
 test('discoverRules preserves an existing API convention document', () => {

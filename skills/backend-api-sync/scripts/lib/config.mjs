@@ -34,6 +34,14 @@ function ensureGitignoreEntry(projectRoot, entry) {
   fs.writeFileSync(gitignorePath, `${current}${current && !current.endsWith('\n') ? '\n' : ''}${entry}\n`);
 }
 
+export function ensureConfigTemplate(projectRoot) {
+  const { runtimeDir, configPath } = getRuntimePaths(projectRoot);
+  if (fs.existsSync(configPath)) return { created: false, configPath };
+  fs.mkdirSync(runtimeDir, { recursive: true });
+  fs.writeFileSync(configPath, `${JSON.stringify({ projects: [], rulePath: '' }, null, 2)}\n`);
+  return { created: true, configPath };
+}
+
 export function initializeConfig(projectRoot, projects) {
   validateProjects(projects);
   const paths = getRuntimePaths(projectRoot);
@@ -43,6 +51,13 @@ export function initializeConfig(projectRoot, projects) {
   fs.writeFileSync(paths.configPath, `${JSON.stringify(config, null, 2)}\n`);
   ensureGitignoreEntry(projectRoot, '.rico-skill/backend-api-sync.config');
   return config;
+}
+
+export function finalizeConfig(projectRoot) {
+  const { configPath } = getRuntimePaths(projectRoot);
+  if (!fs.existsSync(configPath)) throw new Error(`未找到配置文件: ${configPath}`);
+  const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  return initializeConfig(projectRoot, config.projects);
 }
 
 export function readConfig(projectRoot) {

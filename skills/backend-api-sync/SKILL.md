@@ -7,30 +7,46 @@ description: Use when a frontend project needs API functions and TypeScript type
 
 根据调用者提供的接口路径，从已配置后端源码定位 Java Spring MVC Controller，生成符合当前前端项目规则的 API 函数与完整 TypeScript 类型。
 
-将本 Skill 目录记为 `{baseDir}`，当前前端项目根目录记为 `{frontendRoot}`。脚本依赖位于 `{baseDir}/scripts`；若 `node_modules` 不存在，执行 `npm install --prefix {baseDir}/scripts`。
+将本 Skill 目录记为 `{baseDir}`，当前前端项目根目录记为 `{frontendRoot}`。
 
 ## 首次使用
 
-1. 确认当前工作目录是前端项目根目录。运行时文件必须写到 `{frontendRoot}/.rico-skill/`，不写入 Skill 安装目录。
-2. 检查 `.rico-skill/backend-api-sync.config`：不存在时，逐项询问后端项目的名称、语言和**绝对路径**。首版仅接受 Java Spring MVC，但保留 `language` 以便扩展。
-3. 创建配置：
+先检查 `{frontendRoot}/.rico-skill/backend-api-sync.config`，**此步骤必须在安装依赖、扫描规则、解析路由或生成代码之前执行**。
+
+配置不存在时，只执行下列命令：
 
 ```bash
-node {baseDir}/scripts/init-config.mjs --project-root {frontendRoot} --projects '<json-array>'
+node {baseDir}/scripts/ensure-config.mjs {frontendRoot}
 ```
 
-配置格式固定为：
+然后告知用户已创建配置文件，要求其填写后端项目；**立即停止本次执行**。不得安装脚本依赖、修改 `.gitignore`、扫描项目规则、读取 Controller 或生成任何前端文件。
+
+模板格式：
 
 ```json
 {
-  "projects": [{ "name": "order-service", "language": "java", "path": "/absolute/path/to/order-service" }],
-  "rulePath": ".rico-skill/backend-api-sync-rules.md"
+  "projects": [],
+  "rulePath": ""
 }
 ```
 
-`projects[*].path` 必须是存在的绝对路径；`rulePath` 必须相对前端项目根目录。配置文件含本机路径，脚本会只将 `.rico-skill/backend-api-sync.config` 加入前端项目 `.gitignore`。
+要求用户将 `projects` 填写为一个或多个 `{ name, language, path }` 对象。`path` 必须是存在的绝对路径；首版 `language` 填 `java`。`rulePath` 由后续初始化自动生成，用户不需要填写。
 
-脚本优先从 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md` 发现 API 约定；没有可用约定时，生成 `.rico-skill/backend-api-sync-rules.md`。该规则文档可提交，生成前允许用户检查或调整。
+配置文件存在但 `projects` 为空或不完整时，同样只引导用户补全并停止。
+
+## 已配置项目
+
+仅当配置已包含有效后端项目时，才安装脚本依赖（如果缺失）：
+
+```bash
+npm install --prefix {baseDir}/scripts
+```
+
+随后根据配置中的项目生成并回填 `rulePath`，脚本会将含本机绝对路径的配置文件加入 `.gitignore`，并优先从 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md` 或现有 API 代码发现规则；没有可用规范时才生成 `.rico-skill/backend-api-sync-rules.md`。规则文档可提交。
+
+```bash
+node {baseDir}/scripts/finalize-config.mjs {frontendRoot}
+```
 
 ## 同步流程
 
