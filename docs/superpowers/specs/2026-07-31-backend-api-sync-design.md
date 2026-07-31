@@ -132,7 +132,6 @@ Java 解析器遍历源码中的 Spring Controller，规范化路径后建立索
 ```text
 skills/backend-api-sync/
   SKILL.md
-  agents/openai.yaml
   scripts/
     package.json
     init-config.mjs
