@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### 新功能
+
+- 新增 `backend-api-sync`：根据 Java Spring MVC 路由解析后端类型并生成前端 API 与 TypeScript 定义。
+
 ### 重构
 
 - yapi-sync 将 Cookie 从 `.yapi-sync/config.json` 拆分到 `.yapi-sync/cookie.json`，配置文件仅保存 `baseUrl` 和 `.gitignore` 更新状态

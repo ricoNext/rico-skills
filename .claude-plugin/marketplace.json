@@ -17,6 +17,7 @@
         "./skills/author-writing-style",
         "./skills/tutor",
         "./skills/yapi-sync",
+        "./skills/backend-api-sync",
         "./skills/gacp"
       ]
     }

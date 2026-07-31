@@ -45,6 +45,17 @@ test('discoverRules creates a local editable rule document when no convention ex
   assert.match(fs.readFileSync(path.join(frontendRoot, result.rulePath), 'utf8'), /API 目录/);
 });
 
+test('discoverRules infers an existing API directory and request client', () => {
+  const { frontendRoot } = makeProject();
+  const apiRoot = path.join(frontendRoot, 'src/services');
+  fs.mkdirSync(apiRoot, { recursive: true });
+  fs.writeFileSync(path.join(apiRoot, 'orders.ts'), "import { httpRequest } from '@/lib/http';\n");
+  const result = discoverRules(frontendRoot);
+  assert.deepEqual(readRules(frontendRoot, result.rulePath), {
+    apiDir: 'src/services', requestImport: '@/lib/http', requestIdentifier: 'httpRequest', responseMode: 'wrapped', typeStyle: 'interface', formatter: '', typecheck: '',
+  });
+});
+
 test('validateProjects rejects invalid paths, duplicate names, and unknown fields', () => {
   const { backendRoot } = makeProject();
   assert.throws(() => validateProjects([]), /非空数组/);

@@ -21,6 +21,12 @@ skills:
     description: >-
       从 YApi 读取接口定义并生成/更新项目中的 API 和 TypeScript 类型，支持单个、批量及分类列表同步。
     tags: [api, yapi, typescript, codegen]
+  - id: backend-api-sync
+    path: skills/backend-api-sync
+    name: 后端接口同步
+    description: >-
+      根据 Java Spring MVC 后端源码中的 RequestMapping 路径定位 Controller，生成符合前端项目规范的 API 函数与完整 TypeScript 类型。
+    tags: [api, backend, java, typescript, codegen]
   - id: gacp
     path: skills/gacp
     name: 快速提交并推送
