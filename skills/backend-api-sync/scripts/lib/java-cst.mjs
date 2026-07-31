@@ -4,6 +4,7 @@ import path from 'node:path';
 import { parse } from 'java-parser';
 
 import { createEndpoint } from './contract.mjs';
+import { resolveTypeClosure } from './java-types.mjs';
 
 function javaFiles(root) {
   if (!fs.existsSync(root)) return [];
@@ -132,5 +133,7 @@ export function parseJavaSpring(backendRoot, route) {
     if (endpointMatches.length) return [{ ...controller, endpoints: endpointMatches }];
     return [];
   });
-  return { matches, types: [], unresolved: [] };
+  const roots = matches.flatMap((match) => match.endpoints.flatMap((endpoint) => [endpoint.responseType, endpoint.requestBody?.type].filter(Boolean)));
+  const closure = resolveTypeClosure(backendRoot, roots);
+  return { matches, types: [...closure.types.values()], unresolved: closure.unresolved };
 }

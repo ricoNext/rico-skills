@@ -14,6 +14,9 @@ const contract = parseJavaSpring(backendRoot, route);
 if (contract.matches.length === 0) {
   console.error(`未在 ${backendRoot} 中找到路由: ${route}`);
   process.exitCode = 2;
+} else if (contract.unresolved.length > 0) {
+  console.error(`路由 ${route} 存在未解析类型: ${contract.unresolved.map(({ type }) => type).join(', ')}`);
+  process.exitCode = 3;
 } else {
   console.log(JSON.stringify(contract, null, 2));
 }
