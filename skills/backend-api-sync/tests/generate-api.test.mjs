@@ -13,6 +13,7 @@ const contract = {
   matches: [{ endpoints: [{ controller: 'OrderController', source: 'com/example/order/OrderController.java', javaMethod: 'getOrder', method: 'GET', path: '/orders/{id}', parameters: [{ in: 'path', name: 'id', type: 'String' }], requestBody: null, responseType: 'ResponseEntity<OrderDto>' }] }],
   types: [
     { name: 'OrderDto', kind: 'dto', fields: [{ name: 'id', type: 'String' }], genericParameters: [] },
+    { name: 'ApiResponse', kind: 'dto', fields: [{ name: 'data', type: 'T' }], genericParameters: ['T'] },
     { name: 'OrderStatus', kind: 'enum', values: ['CREATED', 'PAID', 'CANCELLED'], fields: [], genericParameters: [] },
   ],
   unresolved: [],
@@ -34,6 +35,7 @@ test('renderApiFiles previews generated API files without writing them', () => {
   const preview = renderApiFiles(contract, frontendRoot);
   assert.deepEqual(preview.files.map(({ path: filePath, exists }) => [filePath, exists]), [['src/api/orders.ts', false]]);
   assert.match(preview.files[0].content, /export interface OrderDto/);
+  assert.match(preview.files[0].content, /export interface ApiResponse<T>/);
   assert.match(preview.files[0].content, /export const getOrder/);
   assert.equal(fs.existsSync(path.join(frontendRoot, 'src/api/orders.ts')), false);
 });

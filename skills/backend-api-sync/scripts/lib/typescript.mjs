@@ -12,7 +12,8 @@ function renderFields(type) { return (type.fields || []).map((field) => `  ${fie
 function renderType(type, types) {
   if (type.kind === 'enum') return `export type ${type.name} = ${type.values.map((value) => JSON.stringify(value)).join(' | ')};`;
   const inherited = type.extends && types.has(type.extends) ? `${renderFields(types.get(type.extends))}\n` : '';
-  return `export interface ${type.name} {\n${inherited}${renderFields(type)}\n}`;
+  const genericParameters = type.genericParameters?.length ? `<${type.genericParameters.join(', ')}>` : '';
+  return `export interface ${type.name}${genericParameters} {\n${inherited}${renderFields(type)}\n}`;
 }
 
 function moduleName(endpoint) { return endpoint.path.split('/').filter(Boolean)[0] || 'api'; }
