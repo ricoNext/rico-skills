@@ -13,7 +13,7 @@ export function getRuntimePaths(projectRoot) {
 }
 
 export function isAbsoluteExistingDirectory(directory) {
-  if (!path.isAbsolute(directory)) {
+  if (typeof directory !== 'string' || !path.isAbsolute(directory)) {
     return false;
   }
 

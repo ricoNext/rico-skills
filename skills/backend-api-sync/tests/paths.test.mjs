@@ -20,4 +20,5 @@ test('getRuntimePaths returns runtime paths relative to the resolved project roo
 test('isAbsoluteExistingDirectory rejects relative and missing directories', () => {
   assert.equal(isAbsoluteExistingDirectory('relative/service'), false);
   assert.equal(isAbsoluteExistingDirectory('/missing/service'), false);
+  assert.equal(isAbsoluteExistingDirectory(null), false);
 });
