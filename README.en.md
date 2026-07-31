@@ -65,6 +65,10 @@ Tutor users through any skill or knowledge topic with interactive drills, realis
 
 Fetch interface definitions from **YApi** platform and auto-generate project-compliant API and TypeScript type code. Supports single, batch, and category page (e.g., `cat_1686`) bulk synchronization. Scripts are located in `skills/yapi-sync/scripts/` and read/write config and style files under the user project's `.yapi-sync/` directory. See [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md).
 
+### backend-api-sync
+
+Generate frontend API functions and complete TypeScript types from Java Spring MVC `RequestMapping` routes in backend source. A controller-level route synchronizes every endpoint in that controller; a full endpoint route synchronizes one endpoint. First use creates machine-local backend configuration and a commit-friendly rule document under the frontend project's `.rico-skill/` directory. Existing API files require an explicit overwrite or skip choice. See [skills/backend-api-sync/SKILL.md](skills/backend-api-sync/SKILL.md).
+
 ## License
 
 [MIT](./LICENSE)

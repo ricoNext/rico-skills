@@ -130,6 +130,17 @@ npx skills add ricoNext/rico-skills
 
 详细执行流程、Cookie 鉴权与规范检测见 [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md)。
 
+#### backend-api-sync
+
+根据 Java Spring MVC 后端源码中的 `RequestMapping` 路径生成前端 API 函数和完整 TypeScript 类型。调用时只需提供接口路径：类级路径会同步该 Controller 下全部接口，完整端点路径只同步单个接口。首次使用会在前端项目 `.rico-skill/` 下创建本机后端路径配置和可提交的生成规则文档；遇到现有 API 文件时会询问覆盖或跳过。
+
+**典型用法**：
+
+- 「用 **backend-api-sync** 同步 `/orders`」
+- 「从后端源码生成 `/orders/{id}` 的前端接口和类型」
+
+详细流程见 [skills/backend-api-sync/SKILL.md](skills/backend-api-sync/SKILL.md)。
+
 ## 环境配置
 
 本仓库中的 **author-writing-style** 与 **tutor** 以 Markdown 技能为主，**不强制**配置 API 密钥。运行时个人档案写入用户主目录：
