@@ -52,7 +52,9 @@ export function readConfig(projectRoot) {
   if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error('配置文件必须是对象');
   assertOnlyKeys(config, CONFIG_KEYS, '配置文件');
   validateProjects(config.projects);
-  if (typeof config.rulePath !== 'string' || !config.rulePath || path.isAbsolute(config.rulePath)) {
+  const resolvedRulePath = typeof config.rulePath === 'string' ? path.resolve(projectRoot, config.rulePath) : '';
+  const resolvedProjectRoot = path.resolve(projectRoot);
+  if (typeof config.rulePath !== 'string' || !config.rulePath || path.isAbsolute(config.rulePath) || !(resolvedRulePath === resolvedProjectRoot || resolvedRulePath.startsWith(`${resolvedProjectRoot}${path.sep}`))) {
     throw new Error('rulePath 必须是相对前端项目根目录的路径');
   }
   return config;

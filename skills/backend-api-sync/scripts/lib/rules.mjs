@@ -61,7 +61,7 @@ export function discoverRules(projectRoot, defaultRulePath = DEFAULT_RULE_PATH) 
 export function readRules(projectRoot, rulePath) {
   const content = fs.readFileSync(path.join(projectRoot, rulePath), 'utf8');
   const match = content.match(/```json\s*([\s\S]*?)\s*```/);
-  if (!match) return { ...defaultRules };
+  if (!match) return inferRules(projectRoot);
 
   let parsed;
   try {

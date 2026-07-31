@@ -66,3 +66,12 @@ test('validateProjects rejects invalid paths, duplicate names, and unknown field
   ]), /重复/);
   assert.throws(() => validateProjects([{ name: 'x', language: 'java', path: backendRoot, extra: true }]), /未知字段/);
 });
+
+test('readConfig rejects a rule path that escapes the frontend project', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  initializeConfig(frontendRoot, [{ name: 'backend', language: 'java', path: backendRoot }]);
+  fs.writeFileSync(path.join(frontendRoot, '.rico-skill/backend-api-sync.config'), JSON.stringify({
+    projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath: '../outside.md',
+  }));
+  assert.throws(() => readConfig(frontendRoot), /rulePath/);
+});
