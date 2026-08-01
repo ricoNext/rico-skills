@@ -8,7 +8,6 @@ export function getRuntimePaths(projectRoot) {
   return {
     runtimeDir,
     configPath: path.join(runtimeDir, 'backend-api-sync.config'),
-    defaultRulePath: '.rico-skill/backend-api-sync-rules.md',
   };
 }
 

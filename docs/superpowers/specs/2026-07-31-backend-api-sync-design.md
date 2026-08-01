@@ -24,7 +24,6 @@
 
 ```text
 <frontend-root>/.rico-skill/backend-api-sync.config
-<frontend-root>/.rico-skill/backend-api-sync-rules.md
 ```
 
 配置使用 JSON，格式固定如下：
@@ -38,7 +37,17 @@
       "path": "/absolute/path/to/order-service"
     }
   ],
-  "rulePath": ".rico-skill/backend-api-sync-rules.md"
+  "rules": {
+    "apiDir": "src/api",
+    "requestImport": "@/utils/request",
+    "requestIdentifier": "request",
+    "responseMode": "wrapped",
+    "typeStyle": "interface",
+    "typePlacement": "same-file",
+    "typeDir": "",
+    "formatter": "",
+    "typecheck": ""
+  }
 }
 ```
 
@@ -48,21 +57,21 @@
 - `name` 在配置中唯一，用于多项目路由冲突时让用户选择。
 - `language` 预留扩展；首版只有 `java` 可解析，其他语言项目保留但跳过。
 - `path` 必须是存在的绝对路径。
-- `rulePath` 相对于前端项目根目录，必须指向已有规则文档。
-- 配置含有机器本地绝对路径，首次创建时把 `.rico-skill/backend-api-sync.config` 加入前端项目 `.gitignore`。规则文档不忽略，可提交给团队共享。
+- `rules` 是从当前前端项目归纳出的生成规则，包含 API 目录、请求客户端、响应处理、类型声明形式、类型存放方式以及可选校验命令。
+- `typePlacement` 为 `same-file` 时，类型与 API 函数放在同一文件；为 `separate-file` 时，类型写入 `typeDir`。
+- 配置含有机器本地绝对路径，归纳规则后把 `.rico-skill/backend-api-sync.config` 加入前端项目 `.gitignore`。
 
 ## 首次初始化
 
-当配置不存在时，Skill 依次引导用户填写每个后端项目的名称、语言和绝对路径，并在写入前验证目录存在。
+当配置不存在时，只创建 `{ "projects": [], "rules": null }` 模板并提示用户填写后端项目，然后立即停止；不扫描项目、不安装依赖、不创建规则文档。
 
-随后确定 `rulePath`：
+配置存在时，先校验 `projects` 非空、字段完整、项目名称唯一、后端路径为存在的绝对目录。校验失败即停止。项目校验成功后归纳 `rules`：
 
-1. 扫描前端项目中的 `AGENTS.md`、`CLAUDE.md` 等项目说明，以及已有 API 代码。
-2. 若找到足以指导接口函数、类型定义、请求客户端、响应包装或输出目录的规范文档，将相对路径写入 `rulePath`。
-3. 若没有可用规范，扫描项目现有 API 文件与请求工具，生成 `.rico-skill/backend-api-sync-rules.md`，再写入 `rulePath`。
-4. 若项目没有现有 API 代码，规则文档记录默认输出位置 `src/api/{module}.ts`、请求客户端待确认项和默认 TypeScript 风格；首次生成前将这些默认项展示给用户。
+1. 扫描现有 API 与 TypeScript 文件，识别 API 输出目录、请求工具导入、类型声明风格及类型文件组织方式。
+2. 将归纳出的完整规则对象写入同一个 `backend-api-sync.config`。
+3. 项目没有现有 API 代码时，写入默认规则：`src/api/{module}.ts`、同文件 `interface` 类型与默认请求客户端配置。
 
-若已存在配置但路径无效、JSON 无效或 `rulePath` 无法读取，停止生成并引导用户修正对应字段。
+通用项目指令如 `AGENTS.md`、`CLAUDE.md` 不作为规则来源。若已存在配置但 JSON、项目或规则结构无效，停止生成并引导用户修正对应字段。
 
 ## 路由定位
 
@@ -85,7 +94,7 @@ Java 解析器遍历源码中的 Spring Controller，规范化路径后建立索
 - `@PathVariable`、`@RequestParam`、`@RequestBody`、`@RequestHeader`。
 - 方法名、源码文件与行号、参数可选性、返回类型。
 
-解析器输出语言无关的中间契约 JSON。前端生成器只消费该契约和 `rulePath`，因此新增其他语言时只需实现同一契约格式的解析器。
+解析器输出语言无关的中间契约 JSON。前端生成器只消费该契约和配置内嵌的 `rules`，因此新增其他语言时只需实现同一契约格式的解析器。
 
 ## 类型闭包
 
@@ -99,15 +108,15 @@ Java 解析器遍历源码中的 Spring Controller，规范化路径后建立索
 - `ResponseEntity<T>` 和项目内常见的泛型响应包装。
 - DTO 嵌套字段、继承字段、枚举和本地类型引用。
 
-枚举根据 Java 定义生成字符串字面量联合类型；DTO 按 `rulePath` 规定的风格生成具名 `interface` 或 `type`。响应包装是否由前端请求客户端拆包，也由 `rulePath` 和现有项目代码决定。
+枚举根据 Java 定义生成字符串字面量联合类型；DTO 按 `rules.typeStyle` 生成具名 `interface` 或 `type`，并按 `rules.typePlacement` 存放。响应包装是否由前端请求客户端拆包，也由内嵌规则和现有项目代码决定。
 
 若类型源码缺失、存在同名歧义或序列化形式无法安全确定，生成在写入前停止，并报告未解析类型、引用链和源码位置。
 
 ## 前端生成与更新
 
-生成前读取 `rulePath`，确定 API 目录、请求客户端、文件命名、函数命名、参数传递、类型声明位置、响应包装和格式化命令。
+生成前读取配置中的 `rules`，确定 API 目录、请求客户端、文件命名、函数命名、参数传递、类型声明位置、响应包装和格式化命令。
 
-每次只生成本次选中的 Controller 或端点及其完整类型闭包。生成器应避免重复的函数和类型定义，并遵循规则文档指定的导入和导出形式。
+每次只生成本次选中的 Controller 或端点及其完整类型闭包。生成器应避免重复的函数和类型定义，并遵循配置中指定的导入和导出形式。
 
 若目标前端文件已存在：
 
@@ -143,7 +152,7 @@ skills/backend-api-sync/
     fixtures/
 ```
 
-解析脚本使用成熟的 Java AST 库。`SKILL.md` 保持精简，负责引导、冲突确认和项目内写入；脚本承担配置校验、规则发现、语法解析和确定性的契约输出。
+解析脚本使用成熟的 Java AST 库。`SKILL.md` 保持精简，负责引导、冲突确认和项目内写入；脚本承担配置校验、项目规则归纳、语法解析和确定性的契约输出。
 
 实现时还需要将新 Skill 加入 `skills/catalog.yaml`、`.claude-plugin/marketplace.json` 和项目 README。
 
@@ -151,11 +160,11 @@ skills/backend-api-sync/
 
 测试覆盖：
 
-- 首次初始化、绝对路径校验、规则发现与 `rulePath` 回填。
+- 首次初始化、绝对路径校验与内嵌 `rules` 归纳。
 - 类级路径与完整端点路径匹配。
 - 多项目同路由冲突和无命中诊断。
 - 各类 Spring 映射注解及参数注解。
 - DTO 嵌套、继承、枚举、集合、Map 与嵌套泛型的完整类型闭包。
 - 未解析类型和不支持语言的阻断行为。
 - 已有前端目标文件的覆盖或跳过选择。
-- 按模拟 `rulePath` 生成的 TypeScript 通过语法和类型检查。
+- 按模拟内嵌 `rules` 生成的 TypeScript 通过语法和类型检查。
