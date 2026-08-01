@@ -7,30 +7,56 @@ description: Use when a frontend project needs API functions and TypeScript type
 
 根据调用者提供的接口路径，从已配置后端源码定位 Java Spring MVC Controller，生成符合当前前端项目规则的 API 函数与完整 TypeScript 类型。
 
-将本 Skill 目录记为 `{baseDir}`，当前前端项目根目录记为 `{frontendRoot}`。脚本依赖位于 `{baseDir}/scripts`；若 `node_modules` 不存在，执行 `npm install --prefix {baseDir}/scripts`。
+将本 Skill 目录记为 `{baseDir}`，当前前端项目根目录记为 `{frontendRoot}`。
 
 ## 首次使用
 
-1. 确认当前工作目录是前端项目根目录。运行时文件必须写到 `{frontendRoot}/.rico-skill/`，不写入 Skill 安装目录。
-2. 检查 `.rico-skill/backend-api-sync.config`：不存在时，逐项询问后端项目的名称、语言和**绝对路径**。首版仅接受 Java Spring MVC，但保留 `language` 以便扩展。
-3. 创建配置：
+先检查 `{frontendRoot}/.rico-skill/backend-api-sync.config`，**此步骤必须在安装依赖、扫描规则、解析路由或生成代码之前执行**。
+
+配置不存在时，只执行下列命令：
 
 ```bash
-node {baseDir}/scripts/init-config.mjs --project-root {frontendRoot} --projects '<json-array>'
+node {baseDir}/scripts/ensure-config.mjs {frontendRoot}
 ```
 
-配置格式固定为：
+然后告知用户已创建配置文件，要求其填写后端项目；**立即停止本次执行**。不得安装脚本依赖、修改 `.gitignore`、扫描项目规则、读取 Controller 或生成任何前端文件。
+
+模板格式：
 
 ```json
 {
-  "projects": [{ "name": "order-service", "language": "java", "path": "/absolute/path/to/order-service" }],
-  "rulePath": ".rico-skill/backend-api-sync-rules.md"
+  "projects": [],
+  "rulePath": ""
 }
 ```
 
-`projects[*].path` 必须是存在的绝对路径；`rulePath` 必须相对前端项目根目录。配置文件含本机路径，脚本会只将 `.rico-skill/backend-api-sync.config` 加入前端项目 `.gitignore`。
+要求用户将 `projects` 填写为一个或多个 `{ name, language, path }` 对象。`path` 必须是存在的绝对路径；首版 `language` 填 `java`。`rulePath` 由后续初始化自动生成，用户不需要填写。
 
-脚本优先从 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md` 发现 API 约定；没有可用约定时，生成 `.rico-skill/backend-api-sync-rules.md`。该规则文档可提交，生成前允许用户检查或调整。
+配置文件存在时，必须先执行 `projects` 预检：
+
+```bash
+node {baseDir}/scripts/validate-config.mjs {frontendRoot}
+```
+
+该预检会校验配置 JSON、`projects` 非空、项目字段、重复名称，以及每个后端 `path` 是否为存在的绝对目录。命令返回错误时，直接把错误报告给用户并停止；不得安装依赖、扫描规则或解析路由。`rulePath` 在这个阶段允许为空，因为它会在项目校验通过后的后续初始化中生成。
+
+## 规则路径
+
+仅当 `projects` 预检成功后，才处理 `rulePath`：
+
+```bash
+node {baseDir}/scripts/finalize-config.mjs {frontendRoot}
+```
+
+若配置中的相对 `rulePath` 指向一个已存在文件，保留它。否则，脚本依次检查 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md` 和现有 API 代码；发现类似规范则回填其相对路径，仍未发现才创建 `.rico-skill/backend-api-sync-rules.md`。这一步会将包含本机路径的配置加入 `.gitignore`；规则文档可提交。
+
+## 已配置项目
+
+只有 `rulePath` 已处理完成后，才安装脚本依赖（如果缺失）：
+
+```bash
+npm install --prefix {baseDir}/scripts
+```
 
 ## 同步流程
 

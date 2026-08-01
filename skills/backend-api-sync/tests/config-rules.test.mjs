@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { initializeConfig, readConfig, validateProjects } from '../scripts/lib/config.mjs';
+import { ensureConfigTemplate, finalizeConfig, initializeConfig, readConfig, validateConfiguredProjects, validateProjects } from '../scripts/lib/config.mjs';
 import { discoverRules, readRules } from '../scripts/lib/rules.mjs';
 
 function makeProject() {
@@ -24,6 +24,62 @@ test('initializeConfig writes a project-local config and ignores only that confi
   assert.deepEqual(readConfig(frontendRoot), config);
   assert.match(fs.readFileSync(path.join(frontendRoot, '.gitignore'), 'utf8'), /^\.rico-skill\/backend-api-sync\.config$/m);
   assert.equal(fs.existsSync(path.join(frontendRoot, config.rulePath)), true);
+});
+
+test('ensureConfigTemplate only creates an editable configuration template on first use', () => {
+  const { frontendRoot } = makeProject();
+  const result = ensureConfigTemplate(frontendRoot);
+  const configPath = path.join(frontendRoot, '.rico-skill/backend-api-sync.config');
+
+  assert.equal(result.created, true);
+  assert.deepEqual(JSON.parse(fs.readFileSync(configPath, 'utf8')), { projects: [], rulePath: '' });
+  assert.equal(fs.existsSync(path.join(frontendRoot, '.rico-skill/backend-api-sync-rules.md')), false);
+  assert.equal(fs.existsSync(path.join(frontendRoot, '.gitignore')), false);
+  assert.deepEqual(ensureConfigTemplate(frontendRoot), { created: false, configPath });
+});
+
+test('finalizeConfig processes a user-filled template only after a later invocation', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  ensureConfigTemplate(frontendRoot);
+  const configPath = path.join(frontendRoot, '.rico-skill/backend-api-sync.config');
+  fs.writeFileSync(configPath, JSON.stringify({ projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath: '' }));
+
+  assert.equal(finalizeConfig(frontendRoot).rulePath, '.rico-skill/backend-api-sync-rules.md');
+});
+
+test('finalizeConfig preserves an existing configured rulePath', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  const rulePath = '.rico-skill/custom-rules.md';
+  fs.mkdirSync(path.dirname(path.join(frontendRoot, rulePath)), { recursive: true });
+  fs.writeFileSync(path.join(frontendRoot, rulePath), '# Existing rules\n');
+  fs.writeFileSync(path.join(frontendRoot, '.rico-skill/backend-api-sync.config'), JSON.stringify({
+    projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath,
+  }));
+
+  assert.equal(finalizeConfig(frontendRoot).rulePath, rulePath);
+  assert.equal(fs.existsSync(path.join(frontendRoot, '.rico-skill/backend-api-sync-rules.md')), false);
+});
+
+test('finalizeConfig discovers a similar document when configured rulePath is missing', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  ensureConfigTemplate(frontendRoot);
+  fs.writeFileSync(path.join(frontendRoot, 'CLAUDE.md'), '# API 规范\n使用 request。\n');
+  fs.writeFileSync(path.join(frontendRoot, '.rico-skill/backend-api-sync.config'), JSON.stringify({
+    projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath: '.rico-skill/missing-rules.md',
+  }));
+
+  assert.equal(finalizeConfig(frontendRoot).rulePath, 'CLAUDE.md');
+});
+
+test('validateConfiguredProjects checks an existing config before later work', () => {
+  const { frontendRoot, backendRoot } = makeProject();
+  ensureConfigTemplate(frontendRoot);
+  const configPath = path.join(frontendRoot, '.rico-skill/backend-api-sync.config');
+  fs.writeFileSync(configPath, JSON.stringify({ projects: [{ name: 'backend', language: 'java', path: backendRoot }], rulePath: '' }));
+  assert.deepEqual(validateConfiguredProjects(frontendRoot), [{ name: 'backend', language: 'java', path: backendRoot }]);
+
+  fs.writeFileSync(configPath, JSON.stringify({ projects: [{ name: 'backend', language: 'java', path: './relative' }], rulePath: '' }));
+  assert.throws(() => validateConfiguredProjects(frontendRoot), /绝对目录/);
 });
 
 test('discoverRules preserves an existing API convention document', () => {
