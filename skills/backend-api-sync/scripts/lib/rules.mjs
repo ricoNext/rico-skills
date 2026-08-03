@@ -13,6 +13,11 @@ export const defaultRules = Object.freeze({
   typecheck: '',
 });
 
+function rulesDocument(rules) {
+  const typeLocation = rules.typePlacement === 'same-file' ? '与 API 函数放在同一个文件' : `存放在 ${rules.typeDir}`;
+  return `# API 与 TypeScript 定义规则\n\n## API 定义\n\n- API 文件目录：\`${rules.apiDir}\`\n- 请求客户端：从 \`${rules.requestImport}\` 导入 \`${rules.requestIdentifier}\`\n- 响应处理：\`${rules.responseMode}\`\n\n## TypeScript 类型定义\n\n- 声明形式：\`${rules.typeStyle}\`\n- 存放方式：${typeLocation}\n\n## 机器可读配置\n\n修改规则时，保持以下 JSON 与上面的说明一致。\n\n\`\`\`json\n${JSON.stringify(rules, null, 2)}\n\`\`\`\n`;
+}
+
 function sourceFiles(root) {
   if (!fs.existsSync(root)) return [];
   return fs.readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
@@ -75,5 +80,25 @@ export function validateRules(rules) {
   if (rules.typeStyle !== 'interface' && rules.typeStyle !== 'type') throw new Error('rules.typeStyle 必须是 interface 或 type');
   if (rules.typePlacement !== 'same-file' && rules.typePlacement !== 'separate-file') throw new Error('rules.typePlacement 必须是 same-file 或 separate-file');
   if (rules.typePlacement === 'separate-file' && !rules.typeDir) throw new Error('独立类型文件必须配置 rules.typeDir');
+  return rules;
+}
+
+export function readRulesDocument(rulesPath) {
+  if (!fs.existsSync(rulesPath)) throw new Error(`未找到 API 与 TypeScript 规则文件: ${rulesPath}`);
+  const content = fs.readFileSync(rulesPath, 'utf8');
+  const match = content.match(/```json\s*\n([\s\S]*?)\n```/i);
+  if (!match) throw new Error(`规则文件必须包含 JSON 代码块: ${rulesPath}`);
+  try {
+    return validateRules(JSON.parse(match[1]));
+  } catch (error) {
+    throw new Error(`规则文件格式无效: ${error.message}`);
+  }
+}
+
+export function ensureRulesDocument(projectRoot, rulesPath) {
+  if (fs.existsSync(rulesPath)) return readRulesDocument(rulesPath);
+  const rules = summarizeProjectRules(projectRoot);
+  fs.mkdirSync(path.dirname(rulesPath), { recursive: true });
+  fs.writeFileSync(rulesPath, rulesDocument(rules));
   return rules;
 }

@@ -4,10 +4,13 @@ import path from 'node:path';
 export function getRuntimePaths(projectRoot) {
   const root = path.resolve(projectRoot);
   const runtimeDir = path.join(root, '.rico-skill');
+  const configDir = path.join(runtimeDir, 'backend-api-sync');
 
   return {
     runtimeDir,
-    configPath: path.join(runtimeDir, 'backend-api-sync.config'),
+    configDir,
+    configPath: path.join(configDir, 'config.json'),
+    rulesPath: path.join(runtimeDir, 'api-typescript-style.md'),
   };
 }
 

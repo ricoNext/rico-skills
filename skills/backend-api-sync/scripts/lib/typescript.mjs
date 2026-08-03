@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { readConfig } from './config.mjs';
+import { readConfiguredRules } from './config.mjs';
 import { toTypeScript } from './java-types.mjs';
 
 function typeMap(types) { return types instanceof Map ? types : new Map((types || []).map((type) => [type.name, type])); }
@@ -46,7 +46,7 @@ function renderModule(endpoints, types, rules, typeImport = '') {
 }
 
 export function renderApiFiles(contract, frontendRoot) {
-  const { rules } = readConfig(frontendRoot);
+  const rules = readConfiguredRules(frontendRoot);
   const groups = new Map();
   for (const endpoint of contract.matches.flatMap((match) => match.endpoints)) {
     const name = moduleName(endpoint);

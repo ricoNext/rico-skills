@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { isAbsoluteExistingDirectory, getRuntimePaths } from './paths.mjs';
-import { summarizeProjectRules, validateRules } from './rules.mjs';
+import { ensureRulesDocument, readRulesDocument } from './rules.mjs';
 
 const PROJECT_KEYS = new Set(['name', 'language', 'path']);
-const CONFIG_KEYS = new Set(['projects', 'rules']);
+const CONFIG_KEYS = new Set(['projects']);
 
 function assertOnlyKeys(value, allowed, label) {
   for (const key of Object.keys(value)) {
@@ -34,34 +34,33 @@ function ensureGitignoreEntry(projectRoot, entry) {
 }
 
 export function ensureConfigTemplate(projectRoot) {
-  const { runtimeDir, configPath } = getRuntimePaths(projectRoot);
+  const { configDir, configPath } = getRuntimePaths(projectRoot);
   if (fs.existsSync(configPath)) return { created: false, configPath };
-  fs.mkdirSync(runtimeDir, { recursive: true });
-  fs.writeFileSync(configPath, `${JSON.stringify({ projects: [], rules: null }, null, 2)}\n`);
+  fs.mkdirSync(configDir, { recursive: true });
+  fs.writeFileSync(configPath, `${JSON.stringify({ projects: [] }, null, 2)}\n`);
   return { created: true, configPath };
 }
 
 export function initializeConfig(projectRoot, projects) {
   validateProjects(projects);
   const paths = getRuntimePaths(projectRoot);
-  fs.mkdirSync(paths.runtimeDir, { recursive: true });
-  const config = { projects, rules: summarizeProjectRules(projectRoot) };
+  fs.mkdirSync(paths.configDir, { recursive: true });
+  const config = { projects };
   fs.writeFileSync(paths.configPath, `${JSON.stringify(config, null, 2)}\n`);
-  ensureGitignoreEntry(projectRoot, '.rico-skill/backend-api-sync.config');
+  ensureGitignoreEntry(projectRoot, '.rico-skill/backend-api-sync/config.json');
   return config;
 }
 
 export function finalizeConfig(projectRoot) {
-  const { configPath } = getRuntimePaths(projectRoot);
+  const { configPath, rulesPath } = getRuntimePaths(projectRoot);
   if (!fs.existsSync(configPath)) throw new Error(`未找到配置文件: ${configPath}`);
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error('配置文件必须是对象');
   assertOnlyKeys(config, CONFIG_KEYS, '配置文件');
   validateProjects(config.projects);
-  const finalized = { projects: config.projects, rules: config.rules ? validateRules(config.rules) : summarizeProjectRules(projectRoot) };
-  fs.writeFileSync(configPath, `${JSON.stringify(finalized, null, 2)}\n`);
-  ensureGitignoreEntry(projectRoot, '.rico-skill/backend-api-sync.config');
-  return finalized;
+  const rules = ensureRulesDocument(projectRoot, rulesPath);
+  ensureGitignoreEntry(projectRoot, '.rico-skill/backend-api-sync/config.json');
+  return { projects: config.projects, rules };
 }
 
 export function validateConfiguredProjects(projectRoot) {
@@ -81,5 +80,9 @@ export function readConfig(projectRoot) {
   if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error('配置文件必须是对象');
   assertOnlyKeys(config, CONFIG_KEYS, '配置文件');
   validateProjects(config.projects);
-  return { projects: config.projects, rules: validateRules(config.rules) };
+  return { projects: config.projects };
+}
+
+export function readConfiguredRules(projectRoot) {
+  return readRulesDocument(getRuntimePaths(projectRoot).rulesPath);
 }

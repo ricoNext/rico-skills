@@ -11,7 +11,7 @@ description: Use when a frontend project needs API functions and TypeScript type
 
 ## 首次使用
 
-先检查 `{frontendRoot}/.rico-skill/backend-api-sync.config`，**此步骤必须在安装依赖、扫描规则、解析路由或生成代码之前执行**。
+先检查 `{frontendRoot}/.rico-skill/backend-api-sync/config.json`，**此步骤必须在安装依赖、扫描规则、解析路由或生成代码之前执行**。
 
 配置不存在时，只执行下列命令：
 
@@ -25,12 +25,11 @@ node {baseDir}/scripts/ensure-config.mjs {frontendRoot}
 
 ```json
 {
-  "projects": [],
-  "rules": null
+  "projects": []
 }
 ```
 
-要求用户将 `projects` 填写为一个或多个 `{ name, language, path }` 对象。`path` 必须是存在的绝对路径；首版 `language` 填 `java`。`rules` 由后续初始化自动归纳，用户不需要填写。
+要求用户将 `projects` 填写为一个或多个 `{ name, language, path }` 对象。`path` 必须是存在的绝对路径；首版 `language` 填 `java`。API 与 TypeScript 规则不写入该配置文件。
 
 配置文件存在时，必须先执行 `projects` 预检：
 
@@ -38,7 +37,7 @@ node {baseDir}/scripts/ensure-config.mjs {frontendRoot}
 node {baseDir}/scripts/validate-config.mjs {frontendRoot}
 ```
 
-该预检会校验配置 JSON、`projects` 非空、项目字段、重复名称，以及每个后端 `path` 是否为存在的绝对目录。命令返回错误时，直接把错误报告给用户并停止；不得安装依赖、扫描规则或解析路由。`rules` 在这个阶段允许为 `null`，因为它会在项目校验通过后的后续初始化中生成。
+该预检会校验配置 JSON、`projects` 非空、项目字段、重复名称，以及每个后端 `path` 是否为存在的绝对目录。命令返回错误时，直接把错误报告给用户并停止；不得安装依赖、扫描规则或解析路由。
 
 ## 规则归纳
 
@@ -48,11 +47,11 @@ node {baseDir}/scripts/validate-config.mjs {frontendRoot}
 node {baseDir}/scripts/finalize-config.mjs {frontendRoot}
 ```
 
-扫描当前前端项目的既有 API 与 TypeScript 文件，归纳 API 输出目录、请求客户端导入、响应处理方式、类型声明形式及类型存放方式，并将完整 `rules` 对象写回配置文件。不得将 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md` 或其他通用项目说明直接当作接口生成规则，也不得创建独立规则文档。此步骤会将包含本机路径的配置加入 `.gitignore`。
+规则文件固定为 `{frontendRoot}/.rico-skill/api-typescript-style.md`。文件不存在时，扫描当前前端项目的既有 API 与 TypeScript 文件，归纳 API 输出目录、请求客户端导入、响应处理方式、类型声明形式及类型存放方式，并创建该文件；文件存在时，读取并校验其中的规则。不得将 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md` 或其他通用项目说明直接当作接口生成规则。配置文件包含本机绝对路径，应将 `.rico-skill/backend-api-sync/config.json` 加入 `.gitignore`；规则文件可提交。
 
 ## 已配置项目
 
-只有 `rules` 已归纳完成后，才安装脚本依赖（如果缺失）：
+只有规则文件已就绪后，才安装脚本依赖（如果缺失）：
 
 ```bash
 npm install --prefix {baseDir}/scripts
@@ -88,7 +87,7 @@ node {baseDir}/scripts/generate-api.mjs --frontend-root {frontendRoot} --contrac
 ```
 
 新文件可直接写入；已有文件只能在明确 `overwrite` 时写入，`skip` 保持原样。
-5. 如果配置中的 `rules` 定义了格式化或类型检查命令，仅执行该规则明确指定的命令；未定义时报告跳过。不要修改后端源码。
+5. 如果 `.rico-skill/api-typescript-style.md` 定义了格式化或类型检查命令，仅执行该规则明确指定的命令；未定义时报告跳过。不要修改后端源码。
 
 ## 解析范围
 
