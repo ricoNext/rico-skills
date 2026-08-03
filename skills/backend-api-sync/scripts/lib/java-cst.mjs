@@ -5,6 +5,7 @@ import { parse } from 'java-parser';
 
 import { createEndpoint } from './contract.mjs';
 import { resolveTypeClosure } from './java-types.mjs';
+import { resolveMavenWorkspace } from './maven-workspace.mjs';
 
 function javaFiles(root) {
   if (!fs.existsSync(root)) return [];
@@ -92,7 +93,7 @@ function methodInfo(source, methodNode) {
   return { responseType: match?.[1]?.trim() || 'void', javaMethod: match?.[2] || 'unknown' };
 }
 
-function parseController(source, absoluteFile, sourceRoot) {
+function parseController(source, absoluteFile, sourceRoot, typeSourceRoots) {
   const cst = parse(source);
   const classDeclaration = descendants(cst, 'classDeclaration').find((node) => descendants(node, 'normalClassDeclaration').length > 0);
   if (!classDeclaration) return null;
@@ -119,21 +120,42 @@ function parseController(source, absoluteFile, sourceRoot) {
       responseType: info.responseType,
     })];
   });
-  return { controller, source: relative, basePath: normalizeRoute(base), endpoints };
+  return { controller, source: relative, basePath: normalizeRoute(base), endpoints, absoluteFile, typeSourceRoots };
 }
 
 export { normalizeRoute };
 
 export function parseJavaSpring(backendRoot, route) {
-  const sourceRoot = path.join(backendRoot, 'src', 'main', 'java');
-  const controllers = javaFiles(sourceRoot).map((file) => parseController(fs.readFileSync(file, 'utf8'), file, sourceRoot)).filter(Boolean);
+  const workspace = resolveMavenWorkspace(backendRoot);
+  const controllers = workspace.controllerModules.flatMap(({ sourceRoot, typeSourceRoots }) => javaFiles(sourceRoot)
+    .map((file) => parseController(fs.readFileSync(file, 'utf8'), file, sourceRoot, typeSourceRoots))
+    .filter(Boolean));
   const matches = controllers.flatMap((controller) => {
     if (controller.basePath === normalizeRoute(route)) return [controller];
     const endpointMatches = controller.endpoints.filter((endpoint) => endpoint.path === route);
     if (endpointMatches.length) return [{ ...controller, endpoints: endpointMatches }];
     return [];
   });
-  const roots = matches.flatMap((match) => match.endpoints.flatMap((endpoint) => [endpoint.responseType, endpoint.requestBody?.type].filter(Boolean)));
-  const closure = resolveTypeClosure(backendRoot, roots);
-  return { matches, types: [...closure.types.values()], unresolved: closure.unresolved };
+  const types = new Map();
+  const unresolved = [];
+  for (const match of matches) {
+    const roots = match.endpoints.flatMap((endpoint) => [endpoint.responseType, endpoint.requestBody?.type]
+      .filter(Boolean)
+      .map((type) => ({ type, contextFile: match.absoluteFile })));
+    const closure = resolveTypeClosure(match.typeSourceRoots, roots);
+    unresolved.push(...closure.unresolved);
+    for (const type of closure.types.values()) {
+      const existing = types.get(type.name);
+      if (existing && existing.qualifiedName !== type.qualifiedName) {
+        unresolved.push({ type: type.name, chain: [type.name], candidates: [existing, type].map(({ qualifiedName, absoluteFile }) => ({ qualifiedName, source: absoluteFile })) });
+        continue;
+      }
+      types.set(type.name, type);
+    }
+  }
+  return {
+    matches: matches.map(({ absoluteFile, typeSourceRoots, ...match }) => match),
+    types: [...types.values()],
+    unresolved,
+  };
 }

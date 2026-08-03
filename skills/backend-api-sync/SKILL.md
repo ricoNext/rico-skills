@@ -29,7 +29,7 @@ node {baseDir}/scripts/ensure-config.mjs {frontendRoot}
 }
 ```
 
-要求用户将 `projects` 填写为一个或多个 `{ name, language, path }` 对象。`path` 必须是存在的绝对路径；首版 `language` 填 `java`。API 与 TypeScript 规则不写入该配置文件。
+要求用户将 `projects` 填写为一个或多个 `{ name, language, path }` 对象。`path` 必须是存在的绝对路径；首版 `language` 填 `java`。Java 项目的 `path` 可以是 Controller 所在 Maven 子模块，也可以是 Maven 聚合根；聚合根会检索其本地子模块中的 Controller。API 与 TypeScript 规则不写入该配置文件。
 
 配置文件存在时，必须先执行 `projects` 预检：
 
@@ -94,3 +94,5 @@ node {baseDir}/scripts/generate-api.mjs --frontend-root {frontendRoot} --contrac
 - 路由与参数通过 Java CST 解析，不用正则识别 Java 源码结构。
 - Controller 类级 `@RequestMapping` 命中时同步该 Controller 全部接口；完整端点路径命中时仅同步该端点。
 - 生成完整本地类型闭包，包括 DTO、嵌套 DTO、继承、枚举、集合、Map、Optional 与泛型容器。发现不能消解的本地类型时停止生成并报告引用链。
+- Maven 聚合工程中，类型解析仅读取命中 Controller 所在模块及其本地 `compile` 或 `runtime` 依赖模块的 `src/main/java`。支持直接与传递依赖；不扫描无关模块，也不读取外部 JAR 或网络依赖。
+- 跨模块类型按全限定名、显式 `import`、同包、通配 `import` 与唯一简单类名顺序消解；存在同名歧义或输出名称冲突时停止生成并报告候选源码位置。
