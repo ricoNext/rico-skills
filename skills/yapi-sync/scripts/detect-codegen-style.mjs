@@ -92,7 +92,7 @@ function extractApiStyleFromDoc(content, filename) {
 }
 
 /**
- * 将提取的规范转换为 api-style.md 格式
+ * 将提取的规范转换为 api-typescript-style.md 格式
  */
 function generateStyleMarkdown(extracted, projectRoot) {
   const now = new Date().toISOString().split('T')[0];
@@ -199,10 +199,17 @@ export const getUser = (data: ...) =>
 
 async function detectStyle() {
   const projectRoot = process.argv[2] || process.cwd();
+  const ricoSkillDir = path.join(projectRoot, ".rico-skill");
+  const styleFile = path.join(ricoSkillDir, "api-typescript-style.md");
 
   console.log(`🔍 检测项目 API 代码规范...`);
   console.log(`   项目根目录：${projectRoot}`);
   console.log();
+
+  if (fs.existsSync(styleFile)) {
+    console.log(`   ✅ 使用已有代码规范文件：${styleFile}`);
+    return;
+  }
 
   // 第一步：尝试从文档中提取规范
   console.log(`📄 检查项目文档...`);
@@ -231,22 +238,20 @@ async function detectStyle() {
     console.log(`提示：Agent 应该：`);
     console.log(`  1. 检查项目中现有的 API 文件（可能在 src/api、lib/api、services 等目录）`);
     console.log(`  2. 分析现有代码的风格（命名、类型定义、响应包装等）`);
-    console.log(`  3. 手动创建 .yapi-sync/api-style.md 文件`);
+    console.log(`  3. 手动创建 .rico-skill/api-typescript-style.md 文件`);
     console.log();
     console.log(`或者在 ${DOC_FILES.join(' / ')} 中添加 API 规范章节，再重新运行本脚本。`);
     process.exit(1);
   }
 
-  // 第二步：生成 api-style.md
+  // 第二步：生成 api-typescript-style.md
   console.log();
   console.log(`📝 生成代码规范文件...`);
 
-  const yapiSyncDir = path.join(projectRoot, '.yapi-sync');
-  if (!fs.existsSync(yapiSyncDir)) {
-    fs.mkdirSync(yapiSyncDir, { recursive: true });
+  if (!fs.existsSync(ricoSkillDir)) {
+    fs.mkdirSync(ricoSkillDir, { recursive: true });
   }
 
-  const styleFile = path.join(yapiSyncDir, 'api-style.md');
   const markdown = generateStyleMarkdown(extracted, projectRoot);
   fs.writeFileSync(styleFile, markdown, 'utf-8');
 

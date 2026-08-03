@@ -12,7 +12,7 @@ description: 从 YApi 读取接口定义并生成/更新项目中的 API 和 Typ
 
 **重要**：Cookie 获取、接口拉取、代码生成、规范检测脚本位于 `{baseDir}/scripts/`。
 
-所有脚本都支持在用户项目的 `.yapi-sync/` 目录中读写配置、Cookie 和规范文件。
+所有脚本都在用户项目的 `.rico-skill/` 目录中读写配置、Cookie 和规范文件：配置与 Cookie 位于 `.rico-skill/yapi-sync/`，TypeScript API 规范位于 `.rico-skill/api-typescript-style.md`。
 
 **Agent 执行说明**：
 
@@ -21,7 +21,7 @@ description: 从 YApi 读取接口定义并生成/更新项目中的 API 和 Typ
 3. 若 `{baseDir}/scripts/node_modules` 不存在，执行 `npm install --prefix {baseDir}/scripts`（使用系统已安装的 Chrome/Edge，无需下载 Chromium）
 4. `${FETCH_INTERFACE}` = `node {baseDir}/scripts/fetch-interface.mjs --project {projectRoot}`
 5. `${RESOLVE_ONLY}` = `node {baseDir}/scripts/fetch-interface.mjs --resolve-only --project {projectRoot}`（仅展开分类，拉取接口 ID 列表，不获取详情）
-6. `${DETECT_CODEGEN}` = `node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}`（扫描项目代码规范，生成 `{projectRoot}/.yapi-sync/api-style.md`）
+6. `${DETECT_CODEGEN}` = `node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}`（仅在缺失时扫描项目代码规范并生成 `{projectRoot}/.rico-skill/api-typescript-style.md`）
 7. `${GENERATE_API}` = `node {baseDir}/scripts/generate-api.mjs`（根据规范生成 API 代码）
 8. 下文中的 `${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${DETECT_CODEGEN}`、`${GENERATE_API}` 均替换为上述命令
 
@@ -147,11 +147,11 @@ ${RESOLVE_ONLY} https://yapi.example.com/project/{projectId}/interface/api/cat_{
 
 #### 1.1 检查配置文件、Cookie 文件与代码规范
 
-读取 `{projectRoot}/.yapi-sync/config.json` 和 `{projectRoot}/.yapi-sync/cookie.json`：
+读取 `{projectRoot}/.rico-skill/yapi-sync/config.json` 和 `{projectRoot}/.rico-skill/yapi-sync/cookie.txt`：
 - **配置文件不存在** → 创建默认配置文件，执行步骤 1.1.5
 - **Cookie 文件不存在或 cookie 为空** → 执行步骤 1.2
 - **Cookie 已配置** → 验证 cookie 有效性，无效则执行步骤 1.2，有效则继续执行步骤 2.1
-- **`cookieGitignoreUpdated` 为 `false`** → 自动将 `.yapi-sync/cookie.json` 添加到 `{projectRoot}/.gitignore`，然后把该字段更新为 `true`
+- **`cookieGitignoreUpdated` 为 `false`** → 自动将 `.rico-skill/yapi-sync/cookie.txt` 添加到 `{projectRoot}/.gitignore`，然后把该字段更新为 `true`
 
 配置文件格式：
 ```json
@@ -161,18 +161,16 @@ ${RESOLVE_ONLY} https://yapi.example.com/project/{projectId}/interface/api/cat_{
 }
 ```
 
-Cookie 文件格式：
-```json
-{
-	"cookie": "yapi的cookie值"
-}
+Cookie 文件为纯文本，直接保存 Cookie 原始值：
+```
+_yapi_token=xxx; _yapi_uid=xxx
 ```
 
-`config.json` 可提交到仓库；`cookie.json` 保存本地鉴权信息，不应提交。
+`config.json` 可提交到仓库；`cookie.txt` 保存本地鉴权信息，不应提交。
 
 #### 1.1.5 首次运行：自动检测代码规范
 
-若用户项目中不存在 `{projectRoot}/.yapi-sync/api-style.md`，执行：
+先检查 `{projectRoot}/.rico-skill/api-typescript-style.md`。文件已存在时直接使用，不重新检测或覆盖；仅在文件不存在时执行：
 
 ```bash
 ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}
@@ -183,13 +181,13 @@ ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot
 1. **尝试从项目文档提取规范**
    - 检查 `AGENTS.md` / `CLAUDE.md` / `CODEBUDDY.md`
    - 查找包含 API 规范的章节（关键词：API、接口、规范、convention 等）
-   - 提取规范说明并生成 `api-style.md`
+   - 提取规范说明并生成 `api-typescript-style.md`
 
 2. **文档中无规范时，脚本返回退出码 1**
    - Agent 需要**自己分析项目代码**
    - 检查项目中现有 API 文件（可能在 `src/api`、`lib/api`、`services`、`app/api` 等目录）
    - 分析现有代码的风格（命名、类型定义、响应包装等）
-   - **手动创建** `{projectRoot}/.yapi-sync/api-style.md` 文件
+   - **手动创建** `{projectRoot}/.rico-skill/api-typescript-style.md` 文件
 
 **路径 A：从文档提取成功（退出码 0）**
 
@@ -203,12 +201,12 @@ ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot
    ✅ 从 CLAUDE.md 中找到 API 规范（章节：API 接口规范）
 
 📝 生成代码规范文件...
-   ✅ 已保存至：/path/to/project/.yapi-sync/api-style.md
+   ✅ 已保存至：/path/to/project/.rico-skill/api-typescript-style.md
 
 📖 请检查生成的文件，必要时编辑「[样本代码]」块来调整规范。
 ```
 
-生成的 `api-style.md` 包含：
+生成的 `api-typescript-style.md` 包含：
 - 从文档提取的原始规范说明
 - 可编辑的「[样本代码]」块（存放位置、类型风格、响应包装、命名规范）
 - Agent 补充说明（如果原始规范不够明确，需要检查现有代码）
@@ -228,7 +226,7 @@ ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot
 提示：Agent 应该：
   1. 检查项目中现有的 API 文件（可能在 src/api、lib/api、services 等目录）
   2. 分析现有代码的风格（命名、类型定义、响应包装等）
-  3. 手动创建 .yapi-sync/api-style.md 文件
+  3. 手动创建 .rico-skill/api-typescript-style.md 文件
 
 或者在 AGENTS.md / CLAUDE.md / CODEBUDDY.md 中添加 API 规范章节，再重新运行本脚本。
 ```
@@ -250,15 +248,16 @@ ${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot
    - 询问用户偏好的代码规范
    - 或使用默认规范（`src/api`、内联类型、camelCase）
 
-4. 手动创建 `{projectRoot}/.yapi-sync/api-style.md` 文件，填写分析出的规范
+4. 手动创建 `{projectRoot}/.rico-skill/api-typescript-style.md` 文件，填写分析出的规范
 
 **文件位置**（用户项目中）：
 ```
 project/
-├── .yapi-sync/
-│   ├── config.json           # YApi 基础配置，可提交
-│   ├── cookie.json           # Cookie 本地文件，不提交
-│   └── api-style.md          # 从文档提取或 Agent 手动创建
+├── .rico-skill/
+│   ├── api-typescript-style.md  # 从文档提取或 Agent 手动创建
+│   └── yapi-sync/
+│       ├── config.json          # YApi 基础配置，可提交
+│       └── cookie.txt           # Cookie 原始值，本地文件，不提交
 ├── src/
 │   └── api/                  # 现有 API 文件（如果有）
 └── CLAUDE.md                 # 可选：包含 API 规范章节
@@ -266,7 +265,7 @@ project/
 
 **用户可以**：
 - 在项目文档（`AGENTS.md` / `CLAUDE.md` / `CODEBUDDY.md`）中添加 API 规范章节，脚本会自动提取
-- 直接编辑 `.yapi-sync/api-style.md` 中的「[样本代码]」块来调整规范
+- 直接编辑 `.rico-skill/api-typescript-style.md` 中的「[样本代码]」块来调整规范
 - 删除该文件后重新运行脚本以重新检测
 
 #### 1.2 获取 Cookie（手动方式）
@@ -278,7 +277,7 @@ YApi Cookie 未配置或已失效，请手动获取 Cookie 并写入 Cookie 文�
   1. 在浏览器中访问 {baseUrl} 并登录
   2. 打开开发者工具 (F12) > Application > Cookies
   3. 复制 _yapi_token 和 _yapi_uid 的值，格式：_yapi_token=xxx; _yapi_uid=xxx
-  4. 写入 .yapi-sync/cookie.json 的 cookie 字段
+  4. 将 Cookie 原始值写入 .rico-skill/yapi-sync/cookie.txt
 ```
 
 **步骤 1**: 引导用户获取 Cookie
@@ -312,7 +311,7 @@ ask_user_question({
 **步骤 3**: 接收用户输入的 Cookie，验证包含必要字段（`_yapi_token` 和 `_yapi_uid`）
 
 - **验证失败** → 提示格式错误，重新要求粘贴
-- **验证成功** → 写入 `{projectRoot}/.yapi-sync/cookie.json`，并确保 `.gitignore` 已包含 `.yapi-sync/cookie.json`
+- **验证成功** → 将 Cookie 原始值写入 `{projectRoot}/.rico-skill/yapi-sync/cookie.txt`，并确保 `.gitignore` 已包含 `.rico-skill/yapi-sync/cookie.txt`
 
 **步骤 4**: 继续执行步骤 2.1
 
@@ -434,7 +433,7 @@ ask_user_question({
 
 #### 4.0 应用检测到的代码规范
 
-在代码生成前，系统自动读取用户项目中的 `{projectRoot}/.yapi-sync/api-style.md`，提取用户定义的规范：
+在代码生成前，系统自动读取用户项目中的 `{projectRoot}/.rico-skill/api-typescript-style.md`，提取用户定义的规范：
 
 - **API 存放位置**：从文件中的「[样本代码]」块读取目录（默认 `src/api/`）
 - **类型定义风格**：内联 vs 分离式
@@ -465,7 +464,7 @@ export const getXxx = (data: {
 ```
 
 **生成流程**：
-1. 读取 `detected-api-style.md` 中的规范配置
+1. 读取 `api-typescript-style.md` 中的规范配置
 2. 从接口路径推断模块名（如 `/user/detail` → `user.ts`）
 3. 根据规范生成函数名、参数类型、返回类型
 4. 生成函数代码并按模块合并
@@ -510,7 +509,7 @@ node {baseDir}/scripts/generate-api.mjs interfaces.json {projectRoot} {outputDir
 ```
 
 脚本会：
-- 读取 `{projectRoot}/.yapi-sync/api-style.md` 中的规范
+- 读取 `{projectRoot}/.rico-skill/api-typescript-style.md` 中的规范
 - 根据规范生成 API 函数
 - 按模块写入 `{outputDir}` 中的 `.ts` 文件
 
@@ -565,7 +564,7 @@ biome check {outputDir}
 | 无有效 YApi 路径 | 抛出错误并退出 |
 | 分类 ID 无效或无权访问 | 记录失败原因，若仅含该分类则退出 |
 | 分类下无接口 | 提示后退出 |
-| Cookie 未配置/失效 | 提示用户手动获取 Cookie 并写入 `.yapi-sync/cookie.json` |
+| Cookie 未配置/失效 | 提示用户手动获取 Cookie 并写入 `.rico-skill/yapi-sync/cookie.txt` |
 | 自动登录失败 | 根据原因提示：凭证错误/MFA 要求/表单变更/网络问题，建议手动获取 Cookie |
 | 单个接口请求失败 | 记录失败，继续处理其他接口 |
 | 类型冲突 | 提示用户选择处理方式 |

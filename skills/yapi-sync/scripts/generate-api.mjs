@@ -10,7 +10,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * node generate-api.mjs <input-json-file> <project-root> [output-dir]
  *
  * 其中 input-json-file 是 fetch-interface.mjs 的输出 JSON
- * project-root 是用户项目的根目录（用于读取 .yapi-sync/api-style.md）
+ * project-root 是用户项目的根目录（用于读取 .rico-skill/api-typescript-style.md）
  * output-dir 默认为 ./generated-api
  */
 
@@ -23,7 +23,7 @@ const main = async () => {
 
 参数:
   <input-json-file>  fetch-interface.mjs 的输出 JSON 文件
-  <project-root>     项目根目录（将从 .yapi-sync/api-style.md 读取规范）
+  <project-root>     项目根目录（将从 .rico-skill/api-typescript-style.md 读取规范）
   [output-dir]       生成代码的输出目录（默认: ./generated-api）
 
 示例:
@@ -56,8 +56,8 @@ const main = async () => {
     process.exit(1);
   }
 
-  console.log(`🔍 检测代码规范: ${path.join(projectRoot, ".yapi-sync/api-style.md")}`);
-  const styleFile = path.join(projectRoot, ".yapi-sync", "api-style.md");
+  console.log(`🔍 检测代码规范: ${path.join(projectRoot, ".rico-skill/api-typescript-style.md")}`);
+  const styleFile = path.join(projectRoot, ".rico-skill", "api-typescript-style.md");
   if (!fs.existsSync(styleFile)) {
     console.warn(`⚠️  未检测到代码规范文件`);
     console.log(`   请先运行: node detect-codegen-style.mjs ${projectRoot}`);

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 
 /**
- * 从 .yapi-sync/api-style.md 中解析代码生成规范
+ * 从 .rico-skill/api-typescript-style.md 中解析代码生成规范
  * @param {string} projectRoot - 项目根目录
  * @returns {object} 代码生成规范配置
  */
@@ -14,7 +14,7 @@ export function parseCodegenStyle(projectRoot) {
     naming: "camelCase",
   };
 
-  const styleFile = path.join(projectRoot, ".yapi-sync", "api-style.md");
+  const styleFile = path.join(projectRoot, ".rico-skill", "api-typescript-style.md");
 
   if (!fs.existsSync(styleFile)) {
     return defaultConfig;

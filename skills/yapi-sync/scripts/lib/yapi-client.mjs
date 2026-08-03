@@ -104,7 +104,7 @@ const throwAuthRequired = (config) => {
         `  1. 在浏览器中访问 ${config.baseUrl} 并登录\n` +
         `  2. 打开开发者工具 (F12) > Application > Cookies\n` +
         `  3. 复制 _yapi_token 和 _yapi_uid 的值，格式：_yapi_token=xxx; _yapi_uid=xxx\n` +
-        `  4. 写入 .yapi-sync/cookie.json 的 cookie 字段`
+        `  4. 将 Cookie 原始值写入 .rico-skill/yapi-sync/cookie.txt`
     );
     error.code = "YAPI_AUTH_REQUIRED";
     throw error;

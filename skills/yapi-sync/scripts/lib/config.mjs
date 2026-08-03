@@ -1,10 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const libDir = path.dirname(fileURLToPath(import.meta.url));
-export const scriptsDir = path.resolve(libDir, "..");
-export const skillDir = path.resolve(scriptsDir, "..");
 
 /**
  * 获取项目根目录（支持环境变量或参数）
@@ -17,33 +12,33 @@ export const getProjectRoot = (explicit) => {
 };
 
 /**
- * 获取 .yapi-sync 目录路径
- * @param {string} projectRoot - 用户项目根目录（可选，默认使用 skill 目录）
- * @returns {string} .yapi-sync 目录路径
+ * 获取 .rico-skill/yapi-sync 目录路径
+ * @param {string} projectRoot - 用户项目根目录（可选，默认使用当前工作目录）
+ * @returns {string} .rico-skill/yapi-sync 目录路径
  */
 export const getYapiSyncDir = (projectRoot) => {
   if (projectRoot) {
-    return path.join(projectRoot, ".yapi-sync");
+    return path.join(projectRoot, ".rico-skill", "yapi-sync");
   }
-  // 向后兼容：如果未指定项目根目录，使用 skill 目录
-  return skillDir;
+  // 未指定项目根目录时，使用当前工作目录作为项目根目录
+  return path.join(process.cwd(), ".rico-skill", "yapi-sync");
 };
 
 /**
  * 获取配置文件路径
- * @param {string} projectRoot - 用户项目根目录（可选，默认使用 skill 目录）
+ * @param {string} projectRoot - 用户项目根目录（可选，默认使用当前工作目录）
  * @returns {string} 配置文件路径
  */
 export const getConfigPath = (projectRoot) => path.join(getYapiSyncDir(projectRoot), "config.json");
 
 /**
  * 获取 Cookie 文件路径
- * @param {string} projectRoot - 用户项目根目录（可选，默认使用 skill 目录）
+ * @param {string} projectRoot - 用户项目根目录（可选，默认使用当前工作目录）
  * @returns {string} Cookie 文件路径
  */
-export const getCookiePath = (projectRoot) => path.join(getYapiSyncDir(projectRoot), "cookie.json");
+export const getCookiePath = (projectRoot) => path.join(getYapiSyncDir(projectRoot), "cookie.txt");
 
-export const COOKIE_GITIGNORE_ENTRY = ".yapi-sync/cookie.json";
+export const COOKIE_GITIGNORE_ENTRY = ".rico-skill/yapi-sync/cookie.txt";
 
 const defaultConfig = {
     baseUrl: "https://yapi.iotbull.com",
@@ -108,21 +103,21 @@ export const ensureCookieGitignore = (projectRoot, config) => {
     }
 
     const currentConfig = normalizeConfig(config || readConfigFile(root));
-    if (currentConfig.cookieGitignoreUpdated) {
-        return true;
-    }
 
     const gitignorePath = path.join(root, ".gitignore");
     const currentContent = fs.existsSync(gitignorePath) ? fs.readFileSync(gitignorePath, "utf-8") : "";
     let nextContent = currentContent;
 
-    if (!gitignoreAlreadyCoversCookie(currentContent)) {
+    const isIgnored = gitignoreAlreadyCoversCookie(currentContent);
+    if (!isIgnored) {
         const prefix = currentContent && !currentContent.endsWith("\n") ? "\n" : "";
         nextContent = `${currentContent}${prefix}${COOKIE_GITIGNORE_ENTRY}\n`;
         fs.writeFileSync(gitignorePath, nextContent);
     }
 
-    writeConfigFile({ ...currentConfig, cookieGitignoreUpdated: true }, root);
+    if (!currentConfig.cookieGitignoreUpdated || !isIgnored) {
+        writeConfigFile({ ...currentConfig, cookieGitignoreUpdated: true }, root);
+    }
     return true;
 };
 
@@ -139,9 +134,7 @@ export const readCookie = (projectRoot) => {
         return "";
     }
 
-    const raw = fs.readFileSync(cookiePath, "utf-8");
-    const parsed = JSON.parse(raw);
-    return parsed.cookie || "";
+    return fs.readFileSync(cookiePath, "utf-8").trim();
 };
 
 /**
@@ -156,7 +149,7 @@ export const writeCookie = (cookie, projectRoot) => {
     ensureDir(path.dirname(cookiePath));
 
     const nextCookie = String(cookie || "").trim();
-    fs.writeFileSync(cookiePath, `${JSON.stringify({ cookie: nextCookie }, null, 2)}\n`);
+    fs.writeFileSync(cookiePath, nextCookie);
     ensureCookieGitignore(root);
     return nextCookie;
 };
@@ -170,10 +163,10 @@ export const readConfig = (projectRoot) => {
     const root = getProjectRoot(projectRoot);
     const parsed = readConfigFile(root);
     const nextConfig = normalizeConfig(parsed);
-    const cookie = readCookie(root) || parsed.cookie || "";
+    let cookie = readCookie(root);
 
-    if (parsed.cookie && !readCookie(root)) {
-        writeCookie(parsed.cookie, root);
+    if (!cookie && parsed.cookie) {
+        cookie = writeCookie(parsed.cookie, root);
     }
 
     if (root && !nextConfig.cookieGitignoreUpdated) {
@@ -182,7 +175,7 @@ export const readConfig = (projectRoot) => {
 
     if (
         !fs.existsSync(getConfigPath(root)) ||
-        parsed.cookie ||
+        Object.hasOwn(parsed, "cookie") ||
         parsed.baseUrl !== nextConfig.baseUrl ||
         Boolean(parsed.cookieGitignoreUpdated) !== nextConfig.cookieGitignoreUpdated
     ) {
