@@ -1,13 +1,20 @@
 # 供人类与脚本检索的 skill 索引（路径相对本仓库根目录）
 version: 1
 skills:
-  - id: author-writing-style
-    path: skills/author-writing-style
-    name: 作者行文风格
+  - id: writing-style-learn
+    path: skills/writing-style-learn
+    name: 作者行文风格（学习写入）
     description: >-
-      从纯文本或网页 URL（抓取正文后）归纳行文习惯，按作者写入固定目录 ~/.rico-skills/author-writing-style/profiles；
-      或按档案改写/生成中文内容。不含多本地文件与目录批量导入。
-    tags: [writing, chinese, style, rewrite]
+      从纯文本或网页 URL（抓取正文后）归纳行文习惯，按作者写入固定目录 ~/.rico-skills/author-writing-style/profiles。
+      不含多本地文件与目录批量导入；套用档案请用 writing-style-apply。
+    tags: [writing, chinese, style, learn, profile]
+  - id: writing-style-apply
+    path: skills/writing-style-apply
+    name: 作者行文风格（应用套用）
+    description: >-
+      读取 ~/.rico-skills/author-writing-style/profiles 下已建档的行文习惯，改写或生成中文内容。
+      不写入档案；建档请用 writing-style-learn。
+    tags: [writing, chinese, style, rewrite, apply]
   - id: tutor
     path: skills/tutor
     name: 互动学习导师

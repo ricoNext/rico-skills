@@ -18,9 +18,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```
 rico-skills/
 ├── skills/                          # Skill implementations
-│   ├── author-writing-style/        # Writing style learning & rewriting skill
-│   │   ├── SKILL.md                # Detailed workflow & API (source of truth)
+│   ├── writing-style-learn/  # Learn & write author style profiles
+│   │   ├── SKILL.md                # Induct style rules & write profiles
 │   │   └── profiles/               # Read-only reference profiles (no runtime writes)
+│   ├── writing-style-apply/  # Apply profile to rewrite/generate
+│   │   └── SKILL.md                # Read profiles & rewrite/generate
 │   ├── yapi-sync/                  # YApi interface sync skill (in development)
 │   │   ├── SKILL.md                # Cookie auth & batch API generation flow
 │   │   └── scripts/                # Node.js automation scripts
@@ -101,14 +103,25 @@ Each skill is documented in its own `SKILL.md` file (nested documentation patter
 
 Treat `SKILL.md` as the single source of truth for that skill; future instances will read it to understand behavior.
 
-### Author-Writing-Style Skill
+### Author Writing Style Skills
+
+Split into two skills that share the same runtime profile directory:
+
+#### writing-style-learn
 
 - **Input**: Plain text samples and/or HTTP(S) URLs (agent extracts main body)
 - **Output**: Author profiles written to `~/.rico-skills/author-writing-style/profiles/<author_slug>.md`
-  - Never writes to `skills/author-writing-style/profiles/` at runtime
+  - Never writes to `skills/writing-style-learn/profiles/` at runtime
   - Profile location is fixed and user-controlled
-- **Trigger**: Keywords like "learning my writing style", "update author profile", "apply style"
-- **Usage**: Analyze text → extract stylistic rules → save to profile → rewrite new text using stored rules
+- **Trigger**: Keywords like "learning my writing style", "update author profile", "建档"
+- **Usage**: Analyze text → extract stylistic rules → save to profile
+
+#### writing-style-apply
+
+- **Input**: Content to rewrite / topic to generate, plus optional author slug
+- **Output**: Rewritten or generated Chinese text aligned to the profile
+- **Trigger**: Keywords like "apply style", "按某作者风格改写"
+- **Usage**: Load profile → rewrite or generate; does not update profiles
 
 ### YApi Sync Skill (In Development)
 
@@ -162,7 +175,8 @@ TaskUpdate 1 --status completed
 
 ## Testing & Verification
 
-- **author-writing-style**: Manually verify profile files are created in `~/.rico-skills/author-writing-style/profiles/`
+- **writing-style-learn**: Manually verify profile files are created in `~/.rico-skills/author-writing-style/profiles/`
+- **writing-style-apply**: Verify rewrite/generate uses an existing profile and does not write to profiles
 - **yapi-sync**: Test with small batches first (1-2 interfaces) before bulk sync; verify generated TypeScript files compile
 - **Marketplace plugin**: Validate `.claude-plugin/marketplace.json` structure before publishing
 

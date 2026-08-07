@@ -14,7 +14,8 @@
       "source": "./",
       "strict": true,
       "skills": [
-        "./skills/author-writing-style",
+        "./skills/writing-style-learn",
+        "./skills/writing-style-apply",
         "./skills/tutor",
         "./skills/yapi-sync",
         "./skills/backend-api-sync",

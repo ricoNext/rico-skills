@@ -8,6 +8,7 @@
 
 ### 重构
 
+- 将 `author-writing-style` 拆为 `writing-style-learn`（写入风格档案）与 `writing-style-apply`（按档案改写/生成）；运行时档案路径仍为 `~/.rico-skills/author-writing-style/profiles/`
 - yapi-sync 将 Cookie 从 `.yapi-sync/config.json` 拆分到 `.yapi-sync/cookie.json`，配置文件仅保存 `baseUrl` 和 `.gitignore` 更新状态
 - yapi-sync 首次使用时自动将 `.yapi-sync/cookie.json` 写入用户项目 `.gitignore`
 

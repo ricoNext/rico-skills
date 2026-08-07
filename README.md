@@ -78,17 +78,27 @@ npx skills add ricoNext/rico-skills
 
 ### 写作与风格 (Writing)
 
-#### author-writing-style
+#### writing-style-learn
 
-从用户提供的**纯文本**或 **HTTP(S) 网页 URL**（抓取正文后）归纳作者行文习惯，将规范合并写入固定目录 `~/.rico-skills/author-writing-style/profiles/<author_slug>.md`；或依据已有档案**改写**/**生成**中文内容。不向 skill 安装目录内的 `profiles/` 写入个人数据。
+从用户提供的**纯文本**或 **HTTP(S) 网页 URL**（抓取正文后）归纳作者行文习惯，将规范合并写入固定目录 `~/.rico-skills/author-writing-style/profiles/<author_slug>.md`。不向 skill 安装目录内的 `profiles/` 写入个人数据。
 
 **典型用法（自然语言，无固定 slash 命令）**：
 
-- 「用 **author-writing-style** skill，根据我下面这段文字更新默认作者的行文档案」
-- 「总结下面链接文章里的写法，并合并进 `ruan-yifeng` 作者档案」
-- 「按 default 作者档案，把下面这段改写成同一风格」
+- 「用 **writing-style-learn**，根据我下面这段文字更新默认作者的行文档案」
+- 「总结下面链接文章里的写法，并合并进 `ruanyifeng` 作者档案」
 
-详细步骤、网页抓取边界与档案模板见 [skills/author-writing-style/SKILL.md](skills/author-writing-style/SKILL.md)。
+详细步骤、网页抓取边界与档案模板见 [skills/writing-style-learn/SKILL.md](skills/writing-style-learn/SKILL.md)。
+
+#### writing-style-apply
+
+依据已有作者档案**改写**或**生成**中文内容；只读 `~/.rico-skills/author-writing-style/profiles/`，不写入或更新风格档案。
+
+**典型用法（自然语言，无固定 slash 命令）**：
+
+- 「用 **writing-style-apply**，按 default 作者档案，把下面这段改写成同一风格」
+- 「按 `ruan-yifeng` 档案写一段说明」
+
+详细步骤见 [skills/writing-style-apply/SKILL.md](skills/writing-style-apply/SKILL.md)。
 
 ### 学习与训练 (Learning)
 
@@ -143,9 +153,9 @@ npx skills add ricoNext/rico-skills
 
 ## 环境配置
 
-本仓库中的 **author-writing-style** 与 **tutor** 以 Markdown 技能为主，**不强制**配置 API 密钥。运行时个人档案写入用户主目录：
+本仓库中的 **writing-style-learn** / **writing-style-apply** 与 **tutor** 以 Markdown 技能为主，**不强制**配置 API 密钥。运行时个人档案写入用户主目录：
 
-- `~/.rico-skills/author-writing-style/profiles/`
+- `~/.rico-skills/author-writing-style/profiles/`（由 learn 写入、apply 读取）
 - `~/.rico-skills/tutor/profiles/`
 
 请确保运行 Agent 的用户对该路径有读写权限；该目录**不会**随 Git 克隆进入本仓库。
@@ -154,7 +164,7 @@ npx skills add ricoNext/rico-skills
 
 ## 自定义扩展
 
-若某个 skill 支持通过侧车文件扩展（例如 `EXTEND.md`），以各 `skills/<skill-id>/SKILL.md` 正文为准。当前 **author-writing-style** 与 **tutor** 均以 `SKILL.md` 为单一事实来源，无单独扩展文件名要求。
+若某个 skill 支持通过侧车文件扩展（例如 `EXTEND.md`），以各 `skills/<skill-id>/SKILL.md` 正文为准。当前 **writing-style-learn**、**writing-style-apply** 与 **tutor** 均以 `SKILL.md` 为单一事实来源，无单独扩展文件名要求。
 
 ## 免责声明
 

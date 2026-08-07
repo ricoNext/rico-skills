@@ -2,7 +2,7 @@
 
 [English](./README.en.md) | [中文](./README.md)
 
-A public **Agent Skills** marketplace on GitHub. Install via Claude Code (or compatible clients) to use Markdown-based skills such as **author-writing-style** and **tutor**.
+A public **Agent Skills** marketplace on GitHub. Install via Claude Code (or compatible clients) to use Markdown-based skills such as **writing-style-learn**, **writing-style-apply**, and **tutor**.
 
 Machine-readable index: [skills/catalog.yaml](skills/catalog.yaml).
 
@@ -53,9 +53,13 @@ Or ask the agent:
 
 ## Skills
 
-### author-writing-style
+### writing-style-learn
 
-Learn writing habits from pasted text or fetched web pages; store profiles under `~/.rico-skills/author-writing-style/profiles/`; rewrite or generate Chinese text to match a profile. See [skills/author-writing-style/SKILL.md](skills/author-writing-style/SKILL.md).
+Learn writing habits from pasted text or fetched web pages; store profiles under `~/.rico-skills/author-writing-style/profiles/`. See [skills/writing-style-learn/SKILL.md](skills/writing-style-learn/SKILL.md).
+
+### writing-style-apply
+
+Rewrite or generate Chinese text to match an existing author profile under `~/.rico-skills/author-writing-style/profiles/`. See [skills/writing-style-apply/SKILL.md](skills/writing-style-apply/SKILL.md).
 
 ### tutor
 
