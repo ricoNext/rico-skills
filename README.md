@@ -130,7 +130,7 @@ npx skills add ricoNext/rico-skills
 
 #### yapi-sync
 
-从 **YApi** 平台读取接口定义，自动生成符合项目规范的 API 和 TypeScript 类型代码。支持单个接口、多个接口，以及**分类页面**（如 `cat_1686`）下全部接口的批量同步。脚本位于 `skills/yapi-sync/scripts/`，在用户项目的 `.yapi-sync/` 目录读写配置与规范文件。
+从 **YApi** 平台读取接口定义，自动生成符合项目规范的 API 和 TypeScript 类型代码。支持单个接口、多个接口，以及**分类页面**（如 `cat_1686`）下全部接口的批量同步。脚本位于 `skills/yapi-sync/scripts/`；配置与 Cookie 读写于用户项目的 `.rico-skill/yapi-sync/`，TypeScript API 规范位于 `.rico-skill/api-typescript-style.md`。
 
 **典型用法（自然语言，无固定 slash 命令）**：
 
