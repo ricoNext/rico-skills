@@ -10,20 +10,23 @@ description: 从 YApi 读取接口定义并生成/更新项目中的 API 和 Typ
 
 ## CLI 准备
 
-**重要**：Cookie 获取、接口拉取、代码生成、规范检测脚本位于 `{baseDir}/scripts/`。
+**重要**：Cookie 获取、接口拉取、代码生成脚本位于 `{baseDir}/scripts/`。
 
-所有脚本都在用户项目的 `.rico-skill/` 目录中读写配置、Cookie 和规范文件：配置与 Cookie 位于 `.rico-skill/yapi-sync/`，TypeScript API 规范位于 `.rico-skill/api-typescript-style.md`。
+配置与 Cookie 位于 `.rico-skill/yapi-sync/`；TypeScript API 规范位于
+`.rico-skill/api-typescript-style.md`，由 **api-typescript-style** skill 创建。
 
 **Agent 执行说明**：
 
 1. 将本 SKILL.md 所在目录记为 `{baseDir}`
 2. 将用户项目根目录记为 `{projectRoot}`
-3. 若 `{baseDir}/scripts/node_modules` 不存在，执行 `npm install --prefix {baseDir}/scripts`（使用系统已安装的 Chrome/Edge，无需下载 Chromium）
-4. `${FETCH_INTERFACE}` = `node {baseDir}/scripts/fetch-interface.mjs --project {projectRoot}`
-5. `${RESOLVE_ONLY}` = `node {baseDir}/scripts/fetch-interface.mjs --resolve-only --project {projectRoot}`（仅展开分类，拉取接口 ID 列表，不获取详情）
-6. `${DETECT_CODEGEN}` = `node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}`（仅在缺失时扫描项目代码规范并生成 `{projectRoot}/.rico-skill/api-typescript-style.md`）
-7. `${GENERATE_API}` = `node {baseDir}/scripts/generate-api.mjs`（根据规范生成 API 代码）
-8. 下文中的 `${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${DETECT_CODEGEN}`、`${GENERATE_API}` 均替换为上述命令
+3. 若 `{baseDir}/scripts/node_modules` 不存在，执行
+   `npm install --prefix {baseDir}/scripts`
+4. `${FETCH_INTERFACE}` =
+   `node {baseDir}/scripts/fetch-interface.mjs --project {projectRoot}`
+5. `${RESOLVE_ONLY}` =
+   `node {baseDir}/scripts/fetch-interface.mjs --resolve-only --project {projectRoot}`
+6. `${GENERATE_API}` = `node {baseDir}/scripts/generate-api.mjs`
+7. 下文中的 `${FETCH_INTERFACE}`、`${RESOLVE_ONLY}`、`${GENERATE_API}` 均替换为上述命令
 
 ## 执行流程
 
@@ -147,11 +150,15 @@ ${RESOLVE_ONLY} https://yapi.example.com/project/{projectId}/interface/api/cat_{
 
 #### 1.1 检查配置文件、Cookie 文件与代码规范
 
-读取 `{projectRoot}/.rico-skill/yapi-sync/config.json` 和 `{projectRoot}/.rico-skill/yapi-sync/cookie.txt`：
+读取 `{projectRoot}/.rico-skill/yapi-sync/config.json` 和
+`{projectRoot}/.rico-skill/yapi-sync/cookie.txt`：
+
 - **配置文件不存在** → 创建默认配置文件，执行步骤 1.1.5
 - **Cookie 文件不存在或 cookie 为空** → 执行步骤 1.2
-- **Cookie 已配置** → 验证 cookie 有效性，无效则执行步骤 1.2，有效则继续执行步骤 2.1
-- **`cookieGitignoreUpdated` 为 `false`** → 自动将 `.rico-skill/yapi-sync/cookie.txt` 添加到 `{projectRoot}/.gitignore`，然后把该字段更新为 `true`
+- **Cookie 已配置** → 验证 cookie 有效性，无效则执行步骤 1.2，有效则继续
+- **`cookieGitignoreUpdated` 为 `false`** → 将
+  `.rico-skill/yapi-sync/cookie.txt` 加入 `{projectRoot}/.gitignore`，并将该字段更新为
+  `true`
 
 配置文件格式：
 ```json
@@ -168,105 +175,27 @@ _yapi_token=xxx; _yapi_uid=xxx
 
 `config.json` 可提交到仓库；`cookie.txt` 保存本地鉴权信息，不应提交。
 
-#### 1.1.5 首次运行：自动检测代码规范
+#### 1.1.5 确保代码规范文件存在
 
-先检查 `{projectRoot}/.rico-skill/api-typescript-style.md`。文件已存在时直接使用，不重新检测或覆盖；仅在文件不存在时执行：
+检查 `{projectRoot}/.rico-skill/api-typescript-style.md`：
 
-```bash
-${DETECT_CODEGEN} = node {baseDir}/scripts/detect-codegen-style.mjs {projectRoot}
-```
+- **文件已存在** → 直接使用；本 skill 不覆盖该文件
+- **文件不存在或无效** → **委托 api-typescript-style skill** 创建或修复，完成后再继续
 
-**脚本检测流程（优先级从高到低）**：
+本 skill **不负责**创建规范文件，也不再调用本地检测脚本。
 
-1. **尝试从项目文档提取规范**
-   - 检查 `AGENTS.md` / `CLAUDE.md` / `CODEBUDDY.md`
-   - 查找包含 API 规范的章节（关键词：API、接口、规范、convention 等）
-   - 提取规范说明并生成 `api-typescript-style.md`
+用户项目中的典型结构：
 
-2. **文档中无规范时，脚本返回退出码 1**
-   - Agent 需要**自己分析项目代码**
-   - 检查项目中现有 API 文件（可能在 `src/api`、`lib/api`、`services`、`app/api` 等目录）
-   - 分析现有代码的风格（命名、类型定义、响应包装等）
-   - **手动创建** `{projectRoot}/.rico-skill/api-typescript-style.md` 文件
-
-**路径 A：从文档提取成功（退出码 0）**
-
-示例输出：
-```
-🔍 检测项目 API 代码规范...
-   项目根目录：/path/to/project
-
-📄 检查项目文档...
-   - 发现 CLAUDE.md
-   ✅ 从 CLAUDE.md 中找到 API 规范（章节：API 接口规范）
-
-📝 生成代码规范文件...
-   ✅ 已保存至：/path/to/project/.rico-skill/api-typescript-style.md
-
-📖 请检查生成的文件，必要时编辑「[样本代码]」块来调整规范。
-```
-
-生成的 `api-typescript-style.md` 包含：
-- 从文档提取的原始规范说明
-- 可编辑的「[样本代码]」块（存放位置、类型风格、响应包装、命名规范）
-- Agent 补充说明（如果原始规范不够明确，需要检查现有代码）
-
-**路径 B：文档中无规范（退出码 1，需要 Agent 介入）**
-
-示例输出：
-```
-🔍 检测项目 API 代码规范...
-   项目根目录：/path/to/project
-
-📄 检查项目文档...
-   ⚠️  未在文档中找到 API 规范说明
-
-⚙️  退出码：1（需要 Agent 分析项目代码）
-
-提示：Agent 应该：
-  1. 检查项目中现有的 API 文件（可能在 src/api、lib/api、services 等目录）
-  2. 分析现有代码的风格（命名、类型定义、响应包装等）
-  3. 手动创建 .rico-skill/api-typescript-style.md 文件
-
-或者在 AGENTS.md / CLAUDE.md / CODEBUDDY.md 中添加 API 规范章节，再重新运行本脚本。
-```
-
-**Agent 处理退出码 1 的步骤**：
-
-1. 检查用户项目中是否有现有 API 文件：
-   - 用 `find {projectRoot} -type f \( -name "*.ts" -o -name "*.js" \) | grep -E "(api|service)" | head -10`
-   - 或问用户："你的项目 API 文件通常放在哪里？"
-
-2. 如果找到现有文件，读取 2-3 个样本文件，分析：
-   - API 存放目录（如 `src/api`、`services`、`app/api`）
-   - 类型定义风格（内联 vs 独立 types 文件）
-   - 响应包装方式（`Response<T>`、`ApiResponse<T>` 等）
-   - 命名规范（camelCase vs snake_case）
-   - 使用的请求库（axios / fetch / 自定义 request）
-
-3. 如果项目无现有 API 文件：
-   - 询问用户偏好的代码规范
-   - 或使用默认规范（`src/api`、内联类型、camelCase）
-
-4. 手动创建 `{projectRoot}/.rico-skill/api-typescript-style.md` 文件，填写分析出的规范
-
-**文件位置**（用户项目中）：
-```
+```text
 project/
 ├── .rico-skill/
-│   ├── api-typescript-style.md  # 从文档提取或 Agent 手动创建
+│   ├── api-typescript-style.md
 │   └── yapi-sync/
-│       ├── config.json          # YApi 基础配置，可提交
-│       └── cookie.txt           # Cookie 原始值，本地文件，不提交
-├── src/
-│   └── api/                  # 现有 API 文件（如果有）
-└── CLAUDE.md                 # 可选：包含 API 规范章节
+│       ├── config.json
+│       └── cookie.txt
+└── src/
+    └── api/
 ```
-
-**用户可以**：
-- 在项目文档（`AGENTS.md` / `CLAUDE.md` / `CODEBUDDY.md`）中添加 API 规范章节，脚本会自动提取
-- 直接编辑 `.rico-skill/api-typescript-style.md` 中的「[样本代码]」块来调整规范
-- 删除该文件后重新运行脚本以重新检测
 
 #### 1.2 获取 Cookie（手动方式）
 
@@ -433,14 +362,17 @@ ask_user_question({
 
 #### 4.0 应用检测到的代码规范
 
-在代码生成前，系统自动读取用户项目中的 `{projectRoot}/.rico-skill/api-typescript-style.md`，提取用户定义的规范：
+在代码生成前，严格读取
+`{projectRoot}/.rico-skill/api-typescript-style.md` 中的「配置字段」
+列表，使用其中的：
 
-- **API 存放位置**：从文件中的「[样本代码]」块读取目录（默认 `src/api/`）
-- **类型定义风格**：内联 vs 分离式
-- **响应包装方式**：`Response<T>`、`ApiResponse<T>` 等
-- **命名规范**：camelCase vs snake_case
+- `apiDir`、`requestImport`、`requestIdentifier`、`requestImportStyle`
+- `responseMode`、`responseWrapper`
+- `typeStyle`、`typePlacement`、`typeDir`、`paramStyle`
+- `naming`、`formatter`、`typecheck`
 
-若用户项目中不存在规范文件，首先执行步骤 1.1.5 自动检测。
+若文件不存在或无效，停止生成并回到步骤 1.1.5，委托
+**api-typescript-style**。
 
 #### 4.1 按 API 定义规范生成代码
 
@@ -469,11 +401,13 @@ export const getXxx = (data: {
 3. 根据规范生成函数名、参数类型、返回类型
 4. 生成函数代码并按模块合并
 
-**关键规范** (可在 Markdown 中调整)：
-1. **入参类型**：根据 `typeStyle` 选择内联或分离定义
-2. **返回类型**：根据 `responseWrapper` 应用包装方式
+**关键规范**（可在规范文件中调整）：
+
+1. **入参类型**：根据 `paramStyle` 选择内联或分离定义
+2. **返回类型**：根据 `responseMode` / `responseWrapper` 应用包装方式
 3. **命名**：根据 `naming` 选择 camelCase 或 snake_case
-4. **注释**：包含接口说明和 YApi 地址（两行）
+4. **请求客户端**：根据 `requestImportStyle` 生成 import
+5. **注释**：包含接口说明和 YApi 地址（两行）
 
 **类型转换规则**：
 

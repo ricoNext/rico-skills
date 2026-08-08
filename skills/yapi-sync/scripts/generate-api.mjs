@@ -1,17 +1,11 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { generateApiCode } from "./lib/generate-code.mjs";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import fs from 'node:fs';
+import path from 'node:path';
+import { generateApiCode } from './lib/generate-code.mjs';
+import { parseCodegenStyle } from './lib/parse-codegen-style.mjs';
 
 /**
  * 使用方式：
  * node generate-api.mjs <input-json-file> <project-root> [output-dir]
- *
- * 其中 input-json-file 是 fetch-interface.mjs 的输出 JSON
- * project-root 是用户项目的根目录（用于读取 .rico-skill/api-typescript-style.md）
- * output-dir 默认为 ./generated-api
  */
 
 const main = async () => {
@@ -23,8 +17,8 @@ const main = async () => {
 
 参数:
   <input-json-file>  fetch-interface.mjs 的输出 JSON 文件
-  <project-root>     项目根目录（将从 .rico-skill/api-typescript-style.md 读取规范）
-  [output-dir]       生成代码的输出目录（默认: ./generated-api）
+  <project-root>     项目根目录（读取 .rico-skill/api-typescript-style.md）
+  [output-dir]       输出目录；默认使用规范中的 apiDir
 
 示例:
   node generate-api.mjs interfaces.json /path/to/project
@@ -34,58 +28,53 @@ const main = async () => {
 
   const inputFile = args[0];
   const projectRoot = args[1];
-  const outputDir = args[2] || "./generated-api";
+  const outputDirArg = args[2];
 
-  // 读取输入 JSON
   if (!fs.existsSync(inputFile)) {
-    console.error(`❌ 输入文件不存在: ${inputFile}`);
+    console.error(`输入文件不存在: ${inputFile}`);
     process.exit(1);
   }
 
   if (!fs.existsSync(projectRoot)) {
-    console.error(`❌ 项目根目录不存在: ${projectRoot}`);
+    console.error(`项目根目录不存在: ${projectRoot}`);
     process.exit(1);
   }
 
-  console.log(`📖 读取接口定义: ${inputFile}`);
-  const inputData = JSON.parse(fs.readFileSync(inputFile, "utf-8"));
+  console.log(`读取接口定义: ${inputFile}`);
+  const inputData = JSON.parse(fs.readFileSync(inputFile, 'utf8'));
   const interfaces = inputData.results || [];
 
   if (interfaces.length === 0) {
-    console.error("❌ 未找到可生成的接口");
+    console.error('未找到可生成的接口');
     process.exit(1);
   }
 
-  console.log(`🔍 检测代码规范: ${path.join(projectRoot, ".rico-skill/api-typescript-style.md")}`);
-  const styleFile = path.join(projectRoot, ".rico-skill", "api-typescript-style.md");
-  if (!fs.existsSync(styleFile)) {
-    console.warn(`⚠️  未检测到代码规范文件`);
-    console.log(`   请先运行: node detect-codegen-style.mjs ${projectRoot}`);
-  }
+  const styleFile = path.join(projectRoot, '.rico-skill', 'api-typescript-style.md');
+  console.log(`读取代码规范: ${styleFile}`);
+  const config = parseCodegenStyle(projectRoot);
+  const outputDir = outputDirArg || path.join(projectRoot, config.apiDir);
 
-  console.log(`✨ 生成 API 代码...`);
-  const generated = await generateApiCode(interfaces, projectRoot);
+  console.log('生成 API 代码...');
+  const { files } = await generateApiCode(interfaces, projectRoot);
 
-  // 创建输出目录
   if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  // 写入生成的文件
   let fileCount = 0;
-  for (const [moduleName, content] of Object.entries(generated)) {
+  for (const [moduleName, content] of Object.entries(files)) {
     const filePath = path.join(outputDir, `${moduleName}.ts`);
-    fs.writeFileSync(filePath, content, "utf-8");
-    console.log(`   ✅ ${moduleName}.ts`);
-    fileCount++;
+    fs.writeFileSync(filePath, content, 'utf8');
+    console.log(`   ${moduleName}.ts`);
+    fileCount += 1;
   }
 
-  console.log(`\n✅ 生成完成`);
+  console.log('\n生成完成');
   console.log(`   文件数: ${fileCount}`);
   console.log(`   输出目录: ${path.resolve(outputDir)}`);
 };
 
 main().catch((error) => {
-  console.error("❌ 生成失败:", error.message || error);
+  console.error('生成失败:', error.message || error);
   process.exit(1);
 });

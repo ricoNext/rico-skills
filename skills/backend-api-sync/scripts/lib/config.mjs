@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { isAbsoluteExistingDirectory, getRuntimePaths } from './paths.mjs';
-import { ensureRulesDocument, readRulesDocument } from './rules.mjs';
+import { readRulesDocument } from './rules.mjs';
 
 const PROJECT_KEYS = new Set(['name', 'language', 'path']);
 const CONFIG_KEYS = new Set(['projects']);
@@ -58,7 +58,7 @@ export function finalizeConfig(projectRoot) {
   if (!config || typeof config !== 'object' || Array.isArray(config)) throw new Error('配置文件必须是对象');
   assertOnlyKeys(config, CONFIG_KEYS, '配置文件');
   validateProjects(config.projects);
-  const rules = ensureRulesDocument(projectRoot, rulesPath);
+  const rules = readRulesDocument(rulesPath);
   ensureGitignoreEntry(projectRoot, '.rico-skill/backend-api-sync/config.json');
   return { projects: config.projects, rules };
 }

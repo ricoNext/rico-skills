@@ -8,13 +8,47 @@ import { fileURLToPath } from 'node:url';
 import { initializeConfig } from '../scripts/lib/config.mjs';
 import { renderApiFiles, writePreview } from '../scripts/lib/typescript.mjs';
 
-const fixtureRules = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fixtures/frontend/.rico-skill/backend-api-sync-rules.md');
+const fixtureRules = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  'fixtures/frontend/.rico-skill/api-typescript-style.md',
+);
 const contract = {
-  matches: [{ endpoints: [{ controller: 'OrderController', source: 'com/example/order/OrderController.java', javaMethod: 'getOrder', method: 'GET', path: '/orders/{id}', parameters: [{ in: 'path', name: 'id', type: 'String' }], requestBody: null, responseType: 'ResponseEntity<OrderDto>' }] }],
+  matches: [
+    {
+      endpoints: [
+        {
+          controller: 'OrderController',
+          source: 'com/example/order/OrderController.java',
+          javaMethod: 'getOrder',
+          method: 'GET',
+          path: '/orders/{id}',
+          parameters: [{ in: 'path', name: 'id', type: 'String' }],
+          requestBody: null,
+          responseType: 'ResponseEntity<OrderDto>',
+        },
+      ],
+    },
+  ],
   types: [
-    { name: 'OrderDto', kind: 'dto', fields: [{ name: 'id', type: 'String' }], genericParameters: [] },
-    { name: 'ApiResponse', kind: 'dto', fields: [{ name: 'data', type: 'T' }], genericParameters: ['T'] },
-    { name: 'OrderStatus', kind: 'enum', values: ['CREATED', 'PAID', 'CANCELLED'], fields: [], genericParameters: [] },
+    {
+      name: 'OrderDto',
+      kind: 'dto',
+      fields: [{ name: 'id', type: 'String' }],
+      genericParameters: [],
+    },
+    {
+      name: 'ApiResponse',
+      kind: 'dto',
+      fields: [{ name: 'data', type: 'T' }],
+      genericParameters: ['T'],
+    },
+    {
+      name: 'OrderStatus',
+      kind: 'enum',
+      values: ['CREATED', 'PAID', 'CANCELLED'],
+      fields: [],
+      genericParameters: [],
+    },
   ],
   unresolved: [],
 };
@@ -25,15 +59,23 @@ function setup() {
   const backendRoot = path.join(root, 'backend');
   fs.mkdirSync(frontendRoot);
   fs.mkdirSync(backendRoot);
-  initializeConfig(frontendRoot, [{ name: 'backend', language: 'java', path: backendRoot }]);
-  fs.copyFileSync(fixtureRules, path.join(frontendRoot, '.rico-skill/backend-api-sync-rules.md'));
+  initializeConfig(frontendRoot, [
+    { name: 'backend', language: 'java', path: backendRoot },
+  ]);
+  fs.copyFileSync(
+    fixtureRules,
+    path.join(frontendRoot, '.rico-skill/api-typescript-style.md'),
+  );
   return frontendRoot;
 }
 
 test('renderApiFiles previews generated API files without writing them', () => {
   const frontendRoot = setup();
   const preview = renderApiFiles(contract, frontendRoot);
-  assert.deepEqual(preview.files.map(({ path: filePath, exists }) => [filePath, exists]), [['src/api/orders.ts', false]]);
+  assert.deepEqual(
+    preview.files.map(({ path: filePath, exists }) => [filePath, exists]),
+    [['src/api/orders.ts', false]],
+  );
   assert.match(preview.files[0].content, /export interface OrderDto/);
   assert.match(preview.files[0].content, /export interface ApiResponse<T>/);
   assert.match(preview.files[0].content, /export const getOrder/);

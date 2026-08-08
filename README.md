@@ -118,38 +118,74 @@ npx skills add ricoNext/rico-skills
 
 ### 接口与代码 (API)
 
+#### api-typescript-style
+
+检测、创建或校验前端项目的 API / TypeScript 代码生成规范，写入
+`.rico-skill/api-typescript-style.md`。优先从 `AGENTS.md` /
+`CLAUDE.md` / `CODEBUDDY.md` 提取；文档不足时可根据现有 API 代码推断。
+**yapi-sync** 与 **backend-api-sync** 在规范缺失时都会委托本 skill，
+自身不再各自创建该文件。
+
+**典型用法**：
+
+- 「用 **api-typescript-style** 帮我检测项目的 API 代码规范」
+- 「生成 `.rico-skill/api-typescript-style.md`」
+
+详细流程见
+[skills/api-typescript-style/SKILL.md](skills/api-typescript-style/SKILL.md)。
+
 #### gacp
 
-快速提交并推送代码的命令型 skill（`git add .` + `git commit` + `git push`）。执行时会忽略对话上下文，仅按固定步骤工作：先检查 `git status`，无改动则结束；有改动则暂存全部、根据改动内容自动生成**中文 Conventional Commit** 提交信息并提交，最后推送到远程。需 `git_write` 与 `network` 权限。
+快速提交并推送代码的命令型 skill
+（`git add .` + `git commit` + `git push`）。
+执行时会忽略对话上下文，仅按固定步骤工作：先检查 `git status`，
+无改动则结束；有改动则暂存全部、根据改动内容自动生成
+**中文 Conventional Commit** 提交信息并提交，最后推送到远程。
+需 `git_write` 与 `network` 权限。
 
 **典型用法（slash 命令）**：
 
 - 「`/gacp`」
 
-若 pre-commit 钩子（format/lint）失败，先修复或使用 `npx ultracite format` 后再次执行。详细步骤与提交类型说明见 [skills/gacp/SKILL.md](skills/gacp/SKILL.md)。
+若 pre-commit 钩子（format/lint）失败，先修复或使用
+`npx ultracite format` 后再次执行。详细步骤与提交类型说明见
+[skills/gacp/SKILL.md](skills/gacp/SKILL.md)。
 
 #### yapi-sync
 
-从 **YApi** 平台读取接口定义，自动生成符合项目规范的 API 和 TypeScript 类型代码。支持单个接口、多个接口，以及**分类页面**（如 `cat_1686`）下全部接口的批量同步。脚本位于 `skills/yapi-sync/scripts/`；配置与 Cookie 读写于用户项目的 `.rico-skill/yapi-sync/`，TypeScript API 规范位于 `.rico-skill/api-typescript-style.md`。
+从 **YApi** 平台读取接口定义，自动生成符合项目规范的 API 和
+TypeScript 类型代码。支持单个接口、多个接口，以及**分类页面**
+（如 `cat_1686`）下全部接口的批量同步。脚本位于
+`skills/yapi-sync/scripts/`；配置与 Cookie 读写于用户项目的
+`.rico-skill/yapi-sync/`，TypeScript API 规范位于
+`.rico-skill/api-typescript-style.md`
+（由 **api-typescript-style** 创建）。
 
 **典型用法（自然语言，无固定 slash 命令）**：
 
-- 「用 **yapi-sync** 把这个接口生成到项目里：`https://yapi.example.com/project/123/interface/api/456`」
+- 「用 **yapi-sync** 把这个接口生成到项目里：
+  `https://yapi.example.com/project/123/interface/api/456`」
 - 「把 `cat_1686` 分类下的接口批量同步过来」
 - 「同步这几个接口 ID：456, 789, 1011」
 
-详细执行流程、Cookie 鉴权与规范检测见 [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md)。
+详细执行流程、Cookie 鉴权与规范检测见
+[skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md)。
 
 #### backend-api-sync
 
-根据 Java Spring MVC 后端源码中的 `RequestMapping` 路径生成前端 API 函数和完整 TypeScript 类型。调用时只需提供接口路径：类级路径会同步该 Controller 下全部接口，完整端点路径只同步单个接口。首次使用会在前端项目 `.rico-skill/` 下创建本机后端路径配置和可提交的生成规则文档；遇到现有 API 文件时会询问覆盖或跳过。
+根据 Java Spring MVC 后端源码中的 `RequestMapping` 路径生成前端 API
+函数和完整 TypeScript 类型。调用时只需提供接口路径：类级路径会同步该
+Controller 下全部接口，完整端点路径只同步单个接口。首次使用会在前端项目
+`.rico-skill/` 下创建本机后端路径配置；公共生成规则由
+**api-typescript-style** 维护。遇到现有 API 文件时会询问覆盖或跳过。
 
 **典型用法**：
 
 - 「用 **backend-api-sync** 同步 `/orders`」
 - 「从后端源码生成 `/orders/{id}` 的前端接口和类型」
 
-详细流程见 [skills/backend-api-sync/SKILL.md](skills/backend-api-sync/SKILL.md)。
+详细流程见
+[skills/backend-api-sync/SKILL.md](skills/backend-api-sync/SKILL.md)。
 
 ## 环境配置
 

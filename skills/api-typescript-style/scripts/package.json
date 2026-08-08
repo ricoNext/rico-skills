@@ -1,11 +1,8 @@
 {
-  "name": "yapi-sync-scripts",
+  "name": "api-typescript-style-scripts",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test ../tests/*.test.mjs"
-  },
-  "dependencies": {
-    "puppeteer-core": "^24.34.0"
   }
 }

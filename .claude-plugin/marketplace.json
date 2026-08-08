@@ -17,6 +17,7 @@
         "./skills/writing-style-learn",
         "./skills/writing-style-apply",
         "./skills/tutor",
+        "./skills/api-typescript-style",
         "./skills/yapi-sync",
         "./skills/backend-api-sync",
         "./skills/gacp"

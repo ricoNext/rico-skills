@@ -16,9 +16,18 @@ test('parses a controller and writes nothing until the preview is confirmed', ()
   const frontendRoot = path.join(root, 'frontend');
   const backendRoot = path.join(root, 'order-service');
   fs.mkdirSync(frontendRoot);
-  fs.cpSync(path.join(fixtureRoot, 'fixtures/java/order-service'), backendRoot, { recursive: true });
-  initializeConfig(frontendRoot, [{ name: 'order-service', language: 'java', path: backendRoot }]);
-  fs.copyFileSync(path.join(fixtureRoot, 'fixtures/frontend/.rico-skill/backend-api-sync-rules.md'), path.join(frontendRoot, '.rico-skill/backend-api-sync-rules.md'));
+  fs.cpSync(
+    path.join(fixtureRoot, 'fixtures/java/order-service'),
+    backendRoot,
+    { recursive: true },
+  );
+  initializeConfig(frontendRoot, [
+    { name: 'order-service', language: 'java', path: backendRoot },
+  ]);
+  fs.copyFileSync(
+    path.join(fixtureRoot, 'fixtures/frontend/.rico-skill/api-typescript-style.md'),
+    path.join(frontendRoot, '.rico-skill/api-typescript-style.md'),
+  );
 
   const contract = parseJavaSpring(backendRoot, '/orders');
   const preview = renderApiFiles(contract, frontendRoot);
@@ -26,5 +35,8 @@ test('parses a controller and writes nothing until the preview is confirmed', ()
   assert.equal(contract.unresolved.length, 0);
   assert.equal(fs.existsSync(target), false);
   writePreview(preview, new Map());
-  assert.match(fs.readFileSync(target, 'utf8'), /OrderStatus = "CREATED" \| "PAID" \| "CANCELLED"/);
+  assert.match(
+    fs.readFileSync(target, 'utf8'),
+    /OrderStatus = "CREATED" \| "PAID" \| "CANCELLED"/,
+  );
 });

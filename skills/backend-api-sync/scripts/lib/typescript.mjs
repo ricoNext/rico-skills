@@ -32,6 +32,13 @@ function endpointCode(endpoint, rules) {
   return `export const ${endpoint.javaMethod} = (${args.join(', ')}): Promise<${response}> =>\n  ${rules.requestIdentifier}<${response}>({\n${options.join(',\n')}\n  });`;
 }
 
+function renderRequestImport(rules) {
+  if (rules.requestImportStyle === 'default') {
+    return `import ${rules.requestIdentifier} from '${rules.requestImport}';`;
+  }
+  return `import { ${rules.requestIdentifier} } from '${rules.requestImport}';`;
+}
+
 function renderModule(endpoints, types, rules, typeImport = '') {
   const map = typeMap(types);
   const declarations = typeImport ? '' : [...map.values()].map((type) => renderType(type, map, rules)).join('\n\n');
@@ -42,7 +49,7 @@ function renderModule(endpoints, types, rules, typeImport = '') {
     const fields = query.map((parameter) => `  ${parameter.name}?: ${toTypeScript(parameter.type)};`).join('\n');
     return [rules.typeStyle === 'type' ? `export type ${name} = {\n${fields}\n};` : `export interface ${name} {\n${fields}\n}`];
   }).join('\n\n');
-  return `import { ${rules.requestIdentifier} } from '${rules.requestImport}';${typeImport ? `\n${typeImport}` : ''}\n\n${declarations}${queries ? `\n\n${queries}` : ''}\n\n${endpoints.map((endpoint) => endpointCode(endpoint, rules)).join('\n\n')}\n`;
+  return `${renderRequestImport(rules)}${typeImport ? `\n${typeImport}` : ''}\n\n${declarations}${queries ? `\n\n${queries}` : ''}\n\n${endpoints.map((endpoint) => endpointCode(endpoint, rules)).join('\n\n')}\n`;
 }
 
 export function renderApiFiles(contract, frontendRoot) {

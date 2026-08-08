@@ -22,6 +22,13 @@ skills:
       指导用户学习、练习、检验或长期追踪任意技能与知识主题；通过真实场景、犯错模拟、漏洞检测、
       压力测试、反向教学、推理审计和学习路径设计帮助用户逼近真正掌握。
     tags: [learning, tutoring, practice, mastery]
+  - id: api-typescript-style
+    path: skills/api-typescript-style
+    name: API TypeScript 规范
+    description: >-
+      检测、创建或校验前端项目的 API 与 TypeScript 代码生成规范，
+      输出至 .rico-skill/api-typescript-style.md，供 yapi-sync、backend-api-sync 等消费。
+    tags: [api, typescript, codegen, style]
   - id: yapi-sync
     path: skills/yapi-sync
     name: YApi 接口同步

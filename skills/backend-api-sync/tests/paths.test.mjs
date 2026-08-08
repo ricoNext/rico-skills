@@ -12,8 +12,9 @@ test('getRuntimePaths returns runtime paths relative to the resolved project roo
 
   assert.deepEqual(getRuntimePaths('/workspace/frontend'), {
     runtimeDir: path.join(root, '.rico-skill'),
-    configPath: path.join(root, '.rico-skill', 'backend-api-sync.config'),
-    defaultRulePath: '.rico-skill/backend-api-sync-rules.md',
+    configDir: path.join(root, '.rico-skill', 'backend-api-sync'),
+    configPath: path.join(root, '.rico-skill', 'backend-api-sync', 'config.json'),
+    rulesPath: path.join(root, '.rico-skill', 'api-typescript-style.md'),
   });
 });
 

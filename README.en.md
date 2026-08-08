@@ -65,13 +65,38 @@ Rewrite or generate Chinese text to match an existing author profile under `~/.r
 
 Tutor users through any skill or knowledge topic with interactive drills, realistic mistake simulations, blind-spot detection, pressure scenarios, reverse teaching, reasoning audits, personalized 7-day learning paths, and long-term progress tracking. Long-term learning profiles are stored under `~/.rico-skills/tutor/profiles/`. See [skills/tutor/SKILL.md](skills/tutor/SKILL.md).
 
+### api-typescript-style
+
+Detect, create, or validate a frontend project's API / TypeScript
+codegen rules at `.rico-skill/api-typescript-style.md`. Prefers
+extracting conventions from `AGENTS.md` / `CLAUDE.md` /
+`CODEBUDDY.md`, and can infer from existing API code when docs are
+missing. Both **yapi-sync** and **backend-api-sync** delegate to this
+skill when the shared style file is absent. See
+[skills/api-typescript-style/SKILL.md](skills/api-typescript-style/SKILL.md).
+
 ### yapi-sync
 
-Fetch interface definitions from **YApi** platform and auto-generate project-compliant API and TypeScript type code. Supports single, batch, and category page (e.g., `cat_1686`) bulk synchronization. Scripts are located in `skills/yapi-sync/scripts/` and read/write config and style files under the user project's `.yapi-sync/` directory. See [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md).
+Fetch interface definitions from **YApi** and auto-generate
+project-compliant API and TypeScript type code. Supports single,
+batch, and category page (e.g., `cat_1686`) bulk synchronization.
+Scripts live in `skills/yapi-sync/scripts/` and read config/cookie
+under `.rico-skill/yapi-sync/`. Shared TypeScript API rules live in
+`.rico-skill/api-typescript-style.md` (created by
+**api-typescript-style**). See
+[skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md).
 
 ### backend-api-sync
 
-Generate frontend API functions and complete TypeScript types from Java Spring MVC `RequestMapping` routes in backend source. A controller-level route synchronizes every endpoint in that controller; a full endpoint route synchronizes one endpoint. First use creates machine-local backend configuration and a commit-friendly rule document under the frontend project's `.rico-skill/` directory. Existing API files require an explicit overwrite or skip choice. See [skills/backend-api-sync/SKILL.md](skills/backend-api-sync/SKILL.md).
+Generate frontend API functions and complete TypeScript types from
+Java Spring MVC `RequestMapping` routes in backend source. A
+controller-level route synchronizes every endpoint in that controller;
+a full endpoint route synchronizes one endpoint. First use creates
+machine-local backend configuration under the frontend project's
+`.rico-skill/` directory; shared generation rules are owned by
+**api-typescript-style**. Existing API files require an explicit
+overwrite or skip choice. See
+[skills/backend-api-sync/SKILL.md](skills/backend-api-sync/SKILL.md).
 
 ## License
 

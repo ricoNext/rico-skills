@@ -1,160 +1,173 @@
-import fs from "fs";
-import path from "path";
+import fs from 'node:fs';
+import path from 'node:path';
+
+const REQUIRED_KEYS = [
+  'schema_version',
+  'apiDir',
+  'requestImport',
+  'requestIdentifier',
+  'requestImportStyle',
+  'responseMode',
+  'responseWrapper',
+  'typeStyle',
+  'typePlacement',
+  'typeDir',
+  'paramStyle',
+  'naming',
+  'formatter',
+  'typecheck',
+];
 
 /**
- * 从 .rico-skill/api-typescript-style.md 中解析代码生成规范
- * @param {string} projectRoot - 项目根目录
- * @returns {object} 代码生成规范配置
+ * 严格读取公共规范文件的 Markdown「配置字段」列表。
+ * 缺失或无效时抛错，不回退默认值。
  */
 export function parseCodegenStyle(projectRoot) {
-  const defaultConfig = {
-    apiDir: "src/api",
-    typeStyle: "inline",
-    responseWrapper: "Response<T>",
-    naming: "camelCase",
-  };
-
-  const styleFile = path.join(projectRoot, ".rico-skill", "api-typescript-style.md");
-
+  const styleFile = path.join(projectRoot, '.rico-skill', 'api-typescript-style.md');
   if (!fs.existsSync(styleFile)) {
-    return defaultConfig;
+    throw new Error(
+      `未找到 API 与 TypeScript 规则文件: ${styleFile}。请先使用 api-typescript-style skill 创建。`,
+    );
   }
 
-  const content = fs.readFileSync(styleFile, "utf-8");
-  const config = { ...defaultConfig };
+  const content = fs.readFileSync(styleFile, 'utf8');
+  return validateCodegenRules(parseMarkdownRuleFields(content, styleFile), styleFile);
+}
 
-  // 解析「[样本代码]」块中的内容
-  // 通过查找代码块来提取具体规范
+function parseMarkdownRuleFields(content, filePath) {
+  if (typeof content !== 'string' || !content.trim()) {
+    throw new Error(`规则文件为空: ${filePath}`);
+  }
 
-  // 1. 解析 API 存放位置
-  const apiDirMatch = content.match(
-    /### 存放位置[\s\S]*?\[样本代码\][\s\S]*?```\s*\n\s*(.+?)\s*\n\s*```/
+  const sectionMatch = content.match(
+    /## 配置字段\s*\n([\s\S]*?)(?=\n## |\n---\s*$|$)/,
   );
-  if (apiDirMatch) {
-    config.apiDir = apiDirMatch[1].trim().replace("/{module}.ts", "");
+  if (!sectionMatch) {
+    throw new Error(`规则文件缺少「配置字段」章节: ${filePath}`);
   }
 
-  // 2. 解析类型定义风格
-  const typeStyleMatch = content.match(/## 项目结构检测结果[\s\S]*?\*\*推断风格\*\*：([^\n]+)/);
-  if (typeStyleMatch) {
-    const style = typeStyleMatch[1].trim();
-    config.typeStyle = style.includes("分离") ? "separate" : "inline";
+  const parsed = {};
+  const fieldPattern = /^- ([A-Za-z_]+):\s*`([^`]*)`\s*$/gm;
+  let match;
+  while ((match = fieldPattern.exec(sectionMatch[1])) !== null) {
+    const [, key, value] = match;
+    if (parsed[key] !== undefined) {
+      throw new Error(`规则字段重复: ${key}`);
+    }
+    parsed[key] = key === 'schema_version' ? Number(value) : value;
   }
 
-  // 3. 解析响应类型包装
-  const responseWrapperMatch = content.match(
-    /### 响应类型包装[\s\S]*?\*\*推断包装方式\*\*：`([^`]+)`/
-  );
-  if (responseWrapperMatch) {
-    config.responseWrapper = responseWrapperMatch[1].trim();
+  return parsed;
+}
+
+function validateCodegenRules(rules, styleFile) {
+  if (!rules || typeof rules !== 'object' || Array.isArray(rules)) {
+    throw new Error(`规则文件格式无效: ${styleFile}`);
   }
 
-  // 4. 解析命名规范
-  const namingMatch = content.match(
-    /\*\*函数命名\*\*\s+\|\s+([^\|]+)\s+\|/
-  );
-  if (namingMatch) {
-    const naming = namingMatch[1].trim();
-    config.naming = naming.includes("snake_case") ? "snake_case" : "camelCase";
+  for (const key of Object.keys(rules)) {
+    if (!REQUIRED_KEYS.includes(key)) {
+      throw new Error(`rules 包含未知字段: ${key}`);
+    }
+  }
+  for (const key of REQUIRED_KEYS) {
+    if (!(key in rules)) {
+      throw new Error(`规则文件缺少字段 ${key}: ${styleFile}`);
+    }
+  }
+  if (rules.schema_version !== 1) {
+    throw new Error('rules.schema_version 必须是 1');
+  }
+  for (const key of REQUIRED_KEYS.filter((item) => item !== 'schema_version')) {
+    if (typeof rules[key] !== 'string') {
+      throw new Error(`rules.${key} 必须是字符串`);
+    }
+  }
+  if (!rules.apiDir) throw new Error('rules.apiDir 不能为空');
+  if (!['default', 'named'].includes(rules.requestImportStyle)) {
+    throw new Error('rules.requestImportStyle 必须是 default 或 named');
+  }
+  if (!['wrapped', 'unwrapped'].includes(rules.responseMode)) {
+    throw new Error('rules.responseMode 必须是 wrapped 或 unwrapped');
+  }
+  if (!rules.responseWrapper) throw new Error('rules.responseWrapper 不能为空');
+  if (!['interface', 'type'].includes(rules.typeStyle)) {
+    throw new Error('rules.typeStyle 必须是 interface 或 type');
+  }
+  if (!['same-file', 'separate-file'].includes(rules.typePlacement)) {
+    throw new Error('rules.typePlacement 必须是 same-file 或 separate-file');
+  }
+  if (rules.typePlacement === 'separate-file' && !rules.typeDir) {
+    throw new Error('独立类型文件必须配置 rules.typeDir');
+  }
+  if (!['inline', 'separate'].includes(rules.paramStyle)) {
+    throw new Error('rules.paramStyle 必须是 inline 或 separate');
+  }
+  if (!['camelCase', 'snake_case'].includes(rules.naming)) {
+    throw new Error('rules.naming 必须是 camelCase 或 snake_case');
   }
 
-  return config;
+  return rules;
 }
 
 /**
  * 根据规范配置生成函数名
- * 路径如: /user/list -> getUser
- *        /user/create -> createUser
- *        /product/detail -> getProduct
  */
-export function generateFunctionName(path, method, naming = "camelCase") {
-  const parts = path
-    .split("/")
-    .filter((p) => p && p !== "v1" && p !== "v2" && !p.match(/^\{/));
+export function generateFunctionName(apiPath, method, naming = 'camelCase') {
+  const parts = apiPath
+    .split('/')
+    .filter((part) => part && part !== 'v1' && part !== 'v2' && !part.match(/^\{/));
 
   if (parts.length === 0) {
-    parts.push("request");
+    parts.push('request');
   }
 
   const verbMap = {
-    get: "get",
-    post: "create",
-    put: "update",
-    patch: "update",
-    delete: "delete",
+    get: 'get',
+    post: 'create',
+    put: 'update',
+    patch: 'update',
+    delete: 'delete',
   };
 
-  const verb = verbMap[method.toLowerCase()] || "request";
-
-  // 识别资源名：
-  // - 若路径中最后是操作词（create, update, delete, list, detail）
-  //   则资源名取前面的
-  // - 否则资源名就是最后一段
-
-  const actionWords = ["create", "update", "delete", "list", "detail", "info", "get", "set"];
+  const verb = verbMap[method.toLowerCase()] || 'request';
+  const actionWords = [
+    'create',
+    'update',
+    'delete',
+    'list',
+    'detail',
+    'info',
+    'get',
+    'set',
+  ];
 
   let resource;
   if (parts.length >= 2) {
     const lastPart = parts[parts.length - 1].toLowerCase();
-    if (actionWords.includes(lastPart)) {
-      // 取倒数第二段
-      resource = parts[parts.length - 2];
-    } else {
-      resource = parts[parts.length - 1];
-    }
+    resource = actionWords.includes(lastPart)
+      ? parts[parts.length - 2]
+      : parts[parts.length - 1];
   } else {
     resource = parts[0];
   }
 
-  // 构建函数名：verb + resource
   let name = verb + resource.charAt(0).toUpperCase() + resource.slice(1);
-
-  if (naming === "snake_case") {
-    name = name.replace(/([A-Z])/g, "_$1").toLowerCase();
+  if (naming === 'snake_case') {
+    name = name.replace(/([A-Z])/g, '_$1').toLowerCase();
   }
-
   return name;
 }
 
-/**
- * 根据规范生成内联类型定义
- */
-export function generateInlineTypeSignature(params, typeStyle = "inline") {
-  if (typeStyle === "separate") {
-    return "data: RequestType";
+export function renderRequestImport(config) {
+  if (config.requestImportStyle === 'named') {
+    return `import { ${config.requestIdentifier} } from "${config.requestImport}";`;
   }
-
-  // 内联类型
-  const fields = params
-    .map((p) => {
-      const type = mapYapiTypeToTs(p.type);
-      const required = p.required ? "" : "?";
-      return `  /** ${p.description || p.name} */\n  ${p.name}${required}: ${type};`;
-    })
-    .join("\n");
-
-  return `data: {\n${fields}\n}`;
-}
-
-/**
- * 映射 YApi 类型到 TypeScript 类型
- */
-function mapYapiTypeToTs(yapiType) {
-  const typeMap = {
-    string: "string",
-    integer: "number",
-    number: "number",
-    boolean: "number", // 0/1
-    array: "T[]",
-    object: "Record<string, any>",
-  };
-
-  return typeMap[yapiType] || "any";
+  return `import ${config.requestIdentifier} from "${config.requestImport}";`;
 }
 
 export default {
   parseCodegenStyle,
   generateFunctionName,
-  generateInlineTypeSignature,
-  mapYapiTypeToTs,
+  renderRequestImport,
 };

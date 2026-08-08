@@ -1,48 +1,33 @@
-import path from "path";
-import { fileURLToPath } from "url";
-import { parseCodegenStyle, generateFunctionName } from "./parse-codegen-style.mjs";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { parseCodegenStyle, generateFunctionName, renderRequestImport } from './parse-codegen-style.mjs';
 
 /**
  * 根据 YApi 接口定义和规范配置生成 API 代码
- * @param {Array} interfaces - YApi 接口对象数组
- * @param {string} projectRoot - 项目根目录
- * @returns {Object} 按模块名组织的生成代码
  */
 export async function generateApiCode(interfaces, projectRoot) {
   const config = parseCodegenStyle(projectRoot);
-
   const moduleMap = new Map();
 
   for (const iface of interfaces) {
-    if (!iface.ok || !iface.data) {
-      continue;
-    }
+    if (!iface.ok || !iface.data) continue;
 
     const interfaceData = iface.data;
-    const { path: apiPath, method, title } = interfaceData;
-
-    // 推断模块名（从路径推断）
+    const { path: apiPath, method, title, project_id: projectId, _id: interfaceId } =
+      interfaceData;
     const moduleName = inferModuleName(apiPath);
-    if (!moduleName) {
-      continue;
-    }
+    if (!moduleName) continue;
 
-    // 生成函数名
     const functionName = generateFunctionName(apiPath, method, config.naming);
-
-    // 生成函数代码
     const functionCode = generateFunctionCode(
       functionName,
       apiPath,
       method,
       title,
       interfaceData,
-      config
+      config,
+      projectId,
+      interfaceId,
     );
 
-    // 按模块归类
     if (!moduleMap.has(moduleName)) {
       moduleMap.set(moduleName, []);
     }
@@ -53,129 +38,112 @@ export async function generateApiCode(interfaces, projectRoot) {
     });
   }
 
-  // 生成模块文件
   const output = {};
   for (const [moduleName, functions] of moduleMap) {
-    output[moduleName] = generateModuleFile(moduleName, functions, config);
+    output[moduleName] = generateModuleFile(functions, config);
   }
 
-  return output;
+  return { files: output, config };
 }
 
-/**
- * 从 API 路径推断模块名
- * 例如: /user/detail -> user
- *      /v1/product/list -> product
- */
 function inferModuleName(apiPath) {
-  const parts = apiPath.split("/").filter((p) => p && !p.match(/^v\d+$/));
-
-  if (parts.length === 0) {
-    return null;
-  }
-
-  // 取第一个路径段作为模块名
+  const parts = apiPath.split('/').filter((part) => part && !part.match(/^v\d+$/));
+  if (parts.length === 0) return null;
   return parts[0];
 }
 
-/**
- * 生成单个函数代码
- */
-function generateFunctionCode(functionName, apiPath, method, title, interfaceData, config) {
-  const params = extractRequestParams(interfaceData, config.typeStyle);
-  const responseType = extractResponseType(interfaceData, config.responseWrapper);
+function generateFunctionCode(
+  functionName,
+  apiPath,
+  method,
+  title,
+  interfaceData,
+  config,
+  projectId,
+  interfaceId,
+) {
+  const params = extractRequestParams(interfaceData);
+  const responseType = extractResponseType(config);
 
-  let signature = "";
+  let signature = '()';
   if (params.length > 0) {
-    if (config.typeStyle === "inline") {
+    if (config.paramStyle === 'inline') {
       const fields = params
-        .map((p) => `  /** ${p.description || p.name} */\n  ${p.name}${p.required ? "" : "?"}: ${p.type};`)
-        .join("\n");
+        .map(
+          (param) =>
+            `  /** ${param.description || param.name} */\n  ${param.name}${
+              param.required ? '' : '?'
+            }: ${param.type};`,
+        )
+        .join('\n');
       signature = `(data: {\n${fields}\n})`;
     } else {
-      signature = `(data: ${functionName}Request)`;
+      signature = `(data: ${functionName[0].toUpperCase()}${functionName.slice(1)}Request)`;
     }
-  } else {
-    signature = `()`;
   }
 
-  const yApiUrl = `https://yapi.example.com/project/{projectId}/interface/api/{interfaceId}`;
+  const yApiUrl =
+    projectId && interfaceId
+      ? `https://yapi.example.com/project/${projectId}/interface/api/${interfaceId}`
+      : 'https://yapi.example.com/project/{projectId}/interface/api/{interfaceId}';
+
+  const callArgs =
+    params.length > 0
+      ? `"${apiPath}", { data }`
+      : `"${apiPath}"`;
 
   return `/**
  * ${title}
  * ${yApiUrl}
  */
 export const ${functionName} = ${signature} =>
-  request<${responseType}>("${apiPath}");`;
+  ${config.requestIdentifier}<${responseType}>(${callArgs});`;
 }
 
-/**
- * 从 YApi 接口定义中提取请求参数
- */
-function extractRequestParams(interfaceData, typeStyle) {
+function extractRequestParams(interfaceData) {
   const params = [];
+  if (!interfaceData.req_body_other) return params;
 
-  // 尝试解析 req_body_other (JSON Schema)
-  if (interfaceData.req_body_other) {
-    try {
-      const schema = JSON.parse(interfaceData.req_body_other);
-      if (schema.properties) {
-        for (const [name, prop] of Object.entries(schema.properties)) {
-          params.push({
-            name,
-            type: mapYapiTypeToTs(prop.type),
-            description: prop.description || "",
-            required: schema.required?.includes(name) ?? false,
-          });
-        }
-      }
-    } catch (e) {
-      // 解析失败，忽略
+  try {
+    const schema = JSON.parse(interfaceData.req_body_other);
+    if (!schema.properties) return params;
+    for (const [name, prop] of Object.entries(schema.properties)) {
+      params.push({
+        name,
+        type: mapYapiTypeToTs(prop.type),
+        description: prop.description || '',
+        required: schema.required?.includes(name) ?? false,
+      });
     }
+  } catch {
+    // ignore invalid schema
   }
 
   return params;
 }
 
-/**
- * 从 YApi 接口定义中提取响应类型
- */
-function extractResponseType(interfaceData, responseWrapper) {
-  // 简化版：返回通用响应类型
-  // 实际应用中应根据 res_body 分析具体的响应结构
-
-  if (responseWrapper.includes("PageData")) {
-    return `${responseWrapper}<T>`;
+function extractResponseType(config) {
+  if (config.responseMode === 'unwrapped') {
+    return 'unknown';
   }
-
-  return responseWrapper;
+  return config.responseWrapper;
 }
 
-/**
- * 映射 YApi 类型到 TypeScript
- */
 function mapYapiTypeToTs(yapiType) {
   const typeMap = {
-    string: "string",
-    integer: "number",
-    number: "number",
-    boolean: "boolean",
-    array: "any[]",
-    object: "Record<string, any>",
+    string: 'string',
+    integer: 'number',
+    number: 'number',
+    boolean: 'boolean',
+    array: 'any[]',
+    object: 'Record<string, any>',
   };
-
-  return typeMap[yapiType] || "any";
+  return typeMap[yapiType] || 'any';
 }
 
-/**
- * 生成整个模块文件的内容
- */
-function generateModuleFile(moduleName, functions, config) {
-  const header = `import request from "@/api";\n\n`;
-
-  const functionCodes = functions.map((f) => f.code).join("\n\n");
-
-  return header + functionCodes;
+function generateModuleFile(functions, config) {
+  const header = `${renderRequestImport(config)}\n\n`;
+  return header + functions.map((item) => item.code).join('\n\n');
 }
 
 export default {
