@@ -108,7 +108,7 @@ function parseMarkdownRuleFields(content, filePath) {
 export function readRulesDocument(rulesPath) {
   if (!fs.existsSync(rulesPath)) {
     throw new Error(
-      `未找到 API 与 TypeScript 规则文件: ${rulesPath}。请先使用 api-typescript-style skill 创建。`,
+      `未找到 API 与 TypeScript 规则文件: ${rulesPath}。请立即按 api-typescript-style skill 自动创建该文件，完成后继续同步；不要结束对话。`,
     );
   }
   const content = fs.readFileSync(rulesPath, 'utf8');

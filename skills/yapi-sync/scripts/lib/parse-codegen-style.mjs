@@ -26,7 +26,7 @@ export function parseCodegenStyle(projectRoot) {
   const styleFile = path.join(projectRoot, '.rico-skill', 'api-typescript-style.md');
   if (!fs.existsSync(styleFile)) {
     throw new Error(
-      `未找到 API 与 TypeScript 规则文件: ${styleFile}。请先使用 api-typescript-style skill 创建。`,
+      `未找到 API 与 TypeScript 规则文件: ${styleFile}。请立即按 api-typescript-style skill 自动创建该文件，完成后继续同步；不要结束对话。`,
     );
   }
 

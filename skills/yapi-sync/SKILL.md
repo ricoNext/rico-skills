@@ -180,9 +180,15 @@ _yapi_token=xxx; _yapi_uid=xxx
 检查 `{projectRoot}/.rico-skill/api-typescript-style.md`：
 
 - **文件已存在** → 直接使用；本 skill 不覆盖该文件
-- **文件不存在或无效** → **委托 api-typescript-style skill** 创建或修复，完成后再继续
+- **文件不存在或无效** →
+  1. **立即**读取并执行同级的 **api-typescript-style** skill
+     （`../api-typescript-style/SKILL.md`，或当前环境已安装的同名 skill）
+  2. 按该 skill 流程创建或修复规范文件
+  3. 创建成功后继续本 skill，不要结束对话
+  4. **禁止**仅提示用户「请先使用 api-typescript-style」后停止
 
-本 skill **不负责**创建规范文件，也不再调用本地检测脚本。
+本 skill **不直接手写**规范文件内容，但必须自动委托
+api-typescript-style 完成创建。
 
 用户项目中的典型结构：
 
@@ -371,8 +377,8 @@ ask_user_question({
 - `typeStyle`、`typePlacement`、`typeDir`、`paramStyle`
 - `naming`、`formatter`、`typecheck`
 
-若文件不存在或无效，停止生成并回到步骤 1.1.5，委托
-**api-typescript-style**。
+若文件不存在或无效，回到步骤 1.1.5，自动执行
+**api-typescript-style**，创建成功后再继续生成；不要结束对话。
 
 #### 4.1 按 API 定义规范生成代码
 

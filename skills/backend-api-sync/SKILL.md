@@ -59,10 +59,15 @@ node {baseDir}/scripts/validate-config.mjs {frontendRoot}
 ```
 
 - **文件已存在**：读取并校验其中的「配置字段」列表。
-- **文件不存在或无效**：委托 **api-typescript-style** skill
-  创建或修复，完成后再继续。
+- **文件不存在或无效**：
+  1. **立即**读取并执行同级的 **api-typescript-style** skill
+     （`../api-typescript-style/SKILL.md`，或当前环境已安装的同名 skill）。
+  2. 按该 skill 流程创建或修复规范文件。
+  3. 创建成功后，**继续**本 skill 后续步骤，不要结束对话。
+  4. **禁止**仅提示用户「请先使用 api-typescript-style」后停止。
 
-本 skill **不创建、不覆盖**该规范文件。配置文件包含本机绝对路径，应将
+本 skill **不直接手写**该规范文件的内容，但必须自动委托
+api-typescript-style 完成创建。配置文件包含本机绝对路径，应将
 `.rico-skill/backend-api-sync/config.json` 加入 `.gitignore`；规则文件可提交。
 
 可选校验命令：
@@ -71,8 +76,8 @@ node {baseDir}/scripts/validate-config.mjs {frontendRoot}
 node {baseDir}/scripts/finalize-config.mjs {frontendRoot}
 ```
 
-该命令只读取并校验已有配置与规范文件；规范缺失时会报错并提示先使用
-api-typescript-style。
+该命令只读取并校验已有配置与规范文件。若报错提示规范缺失，
+Agent 应按上方步骤自动执行 api-typescript-style，完成后再次校验并继续同步。
 
 ## 已配置项目
 
