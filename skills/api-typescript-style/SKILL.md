@@ -1,9 +1,9 @@
 ---
 name: api-typescript-style
 description: >-
-  检测、创建或校验前端项目的 API 与 TypeScript 代码生成规范，写入
-  `.rico-skill/api-typescript-style.md`。
-  在用户要求检测 API 规范、生成 TypeScript 代码风格文件、归纳接口生成规则，
+  检测、创建或校验任意前端项目的 API 写法与 TypeScript 类型定义规范（含类型应放在哪），
+  写入项目根目录 `.rico-skill/api-typescript-style.md`。
+  在用户要求检测 API 规范、归纳 TS 类型存放/命名约定、生成 TypeScript 代码风格文件，
   或 yapi-sync / backend-api-sync 发现规范文件缺失时使用。
   本 skill 只负责创建与校验规范文件；接口同步请用 yapi-sync 或
   backend-api-sync。
@@ -11,9 +11,16 @@ description: >-
 
 # API TypeScript 规范
 
-为前端项目创建或校验统一的 API / TypeScript 代码生成规范文件。
+为**当前前端项目**创建或校验一份**给人（Agent）阅读**的规范文档，须同时覆盖两类约定：
 
-将本 Skill 目录记为 `{baseDir}`，前端项目根目录记为 `{projectRoot}`。
+1. **API 如何定义**（目录、request 封装、函数命名、注释等）
+2. **TypeScript 类型如何定义**（命名前缀、`type`/`interface`、**类型应写到哪个位置**、入参内联 vs 独立类型等）
+
+下游 **yapi-sync**、**backend-api-sync** 会**通读全文**，按文档描述生成代码；**不要**用固定 schema、「配置字段」列表或脚本模板去卡死生成格式。
+
+将本 Skill 目录记为 `{baseDir}`，**当前工作区前端项目根目录**记为 `{projectRoot}`。
+
+本 skill **不绑定**某一仓库的目录名或业务域；所有路径、前缀、示例必须以**目标项目实况**归纳，禁止把其它项目的约定原样写进规范文件。
 
 ## 输出位置
 
@@ -25,72 +32,132 @@ description: >-
 
 该文件可提交到仓库，供 **yapi-sync** 与 **backend-api-sync** 共同读取。
 
-## CLI
-
-```bash
-node {baseDir}/scripts/detect-style.mjs {projectRoot}
-node {baseDir}/scripts/detect-style.mjs {projectRoot} --infer
-node {baseDir}/scripts/detect-style.mjs {projectRoot} --rules /tmp/style-rules.json
-node {baseDir}/scripts/validate-style.mjs {projectRoot}
-```
-
 ## 执行流程
 
-1. **检查已有文件**
-   - 文件存在：调用 `validate-style.mjs` 校验；通过则结束，不覆盖。
-   - 文件损坏或「配置字段」无效：停止并报告错误，请用户修复后再继续。
-2. **优先从项目文档提取**
-   - 按顺序检查 `AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md`。
-   - 查找包含 API / 接口 / 规范 / convention 等关键词的章节。
-   - 找到可用说明后，写入规范文件，并保留原始章节内容。
-3. **文档不足时由 Agent 补全**
-   - 脚本退出码 `1` 时，检查现有 API / TypeScript 文件。
-   - 常见目录：`src/api`、`src/services`、`lib/api`、`services`、`app/api`。
-   - 归纳存放目录、请求客户端导入、响应包装、类型声明形式、类型存放方式、
-     参数类型风格与命名习惯。
-   - 将结果写成 JSON，执行 `--rules`；或直接执行 `--infer`。
-4. **回复用户**
-   - 给出写入路径、来源（文档 / 推断 / 显式规则）与需要人工确认的字段。
+由 Agent **直接读写文件**完成，**不要**调用本 skill 下的脚本去渲染或校验「配置字段」。
 
-## 规范字段
+### 1. 检查已有文件
 
-脚本只解析文件末尾的「配置字段」列表，格式为：
+- 路径：`{projectRoot}/.rico-skill/api-typescript-style.md`
+- **文件已存在且内容可用**（能据此写出符合**本项目**习惯的 API **与** 类型代码，且已写清类型存放位置）：向用户说明路径与来源摘要，**不覆盖**，结束。
+- **文件存在但明显残缺**（例如只有 API 写法、缺少类型存放位置；或仍是旧版「配置字段」机读表；或内容明显抄自其它项目、与本仓库不符）：向用户说明问题；仅在用户明确要求「覆盖重生成」时才重写。
+- **文件不存在**：继续下一步创建。
+
+### 2. 收集项目约定（按优先级）
+
+依次阅读（存在则读），**同时**归纳「接口怎么写」与「类型怎么写、写到哪」。下列路径仅为**常见探测点**，以目标仓库实际存在的目录为准：
+
+1. **项目规则 / 文档**（若有）：Agent 规则目录、`AGENTS.md`、`CLAUDE.md`、`CODEBUDDY.md`、`CONTRIBUTING.md`、README 中与 API / 接口 / TypeScript / 命名相关的章节
+2. **现有 API 源码**：在常见位置中找真实模块，例如 `src/apis`、`src/api`、`src/services`、`lib/api`、`services`、`app/api`、`src/request` 等；以**数量最多、风格最一致**的目录为主样本
+3. **请求封装**：定位项目统一的 `request` / `http` / `client` / `fetcher`（默认 method、参数字段名、是否解包响应、泛型含义）
+4. **类型目录与样例**（必读，用于归纳存放位置）：
+   - 扫描项目中业务类型实际出现的位置（如 `src/types`、`types`、`src/@types`、与 API 同文件、`*.d.ts` 等）
+   - 区分：**现行规范落点**（文档写明或新文件普遍采用）vs **历史遗留**（仍存在但不宜对新代码推荐）
+   - API 文件内的 `export type` / `export interface`：写明是否仍允许，或应抽到共享类型目录
+   - 页面/模块局部类型（如 `pages/**/types.ts`、feature 内 `types.ts`）：写明何时允许放本地、何时必须进共享目录
+5. **命名与声明习惯**：从真实文件统计 `type`/`interface`/`enum` 前缀、入参内联 vs 独立类型、分页/通用响应类型名、是否禁止 `any`
+
+只提炼**可复用的生成规则**与**短示例**，不要大段粘贴业务代码。示例中的符号名、URL、import 路径必须来自（或忠实模仿）**本项目**。
+
+### 3. 由 Agent 撰写规范文档
+
+直接写入 `.rico-skill/api-typescript-style.md`。文档必须是**说明性 Markdown**，让后续 Agent 读完就能按**本项目**习惯生成代码。
+
+**禁止**：
+
+- 末尾再挂一份机读「配置字段」清单，并要求脚本只能解析该清单
+- 用枚举字段（如 `paramStyle: inline`）代替文字说明与代码示例
+- 用代码生成器 / 模板引擎按固定字段拼出整份规范
+- 把本 skill 正文里的探测示例路径当成「该项目必须如此」写进规范文件
+- 写入与目标仓库不符的其它项目约定
+
+**必须覆盖**（无对应约定时写明「未在项目中观察到，生成时询问」）：
+
+| 主题 | 写清什么 |
+| --- | --- |
+| 文件与模块 | API 所在目录、是否扁平/分子目录、如何按域分文件、分段习惯 |
+| 请求方式 | `request`（或等价物）从哪 import、default/named、默认 HTTP method、入参传递方式、无参怎么写、响应是否已解包 |
+| **类型存放位置** | **哪类类型放哪**：规范默认落点的**真实路径**；入参内联规则；全局/环境类型文件；页面局部类型；历史目录是否仍可用；生成新接口时的默认落点 |
+| 类型声明约定 | `type` vs `interface`、命名前缀、能否用 `any`、分页/包装类型；若有后端语言映射（如 Java→TS）再写，没有则省略 |
+| 命名 | 函数命名、文件命名、URL/路径形态、类型命名 |
+| 注释 | JSDoc 是否必填、是否要文档链接/来源等 |
+| 其它 | GET、上传、特殊 `method` 等例外 |
+
+正文用分节标题 + 要点列表 + **可复制的 TypeScript 示例**（与目标项目风格一致）。文首用一两句标明归纳来源（规则文件路径 / 源码目录）。
+
+**类型存放位置**须写成可执行判断，并标明**规范默认落点**与遗留例外。决策列表按目标项目填写，结构可参考：
+
+- 仅单接口使用的入参 → ?（内联 / 独立类型 / …）
+- 跨接口或跨模块复用的业务类型 → ?（写出真实目录与文件命名模式）
+- 全局 / 环境类型 → ?（若有）
+- 仅某页面 / 某 feature 的视图模型 → ?（若有）
+- 历史写法 → 标出路径，并写明新代码是否禁止
+
+### 4. 文档结构参考（按项目裁剪，勿当成必填 schema）
+
+章节可增删，但应保持可读性，且**不要省略「类型存放位置」**：
 
 ```markdown
-## 配置字段
+# 接口与 TypeScript 定义规范
 
-- schema_version: `1`
-- apiDir: `src/api`
-- requestImport: `@/api`
+本文档来源：…（本项目的规则文件 / 源码目录）。
+供 yapi-sync、backend-api-sync 等 Agent 阅读后生成 API 与类型代码；以本文说明与示例为准。
+
+## 1. 文件与模块
+
+- …
+
+## 2. 请求方式
+
+- …
+- 示例代码块（import / 调用方式必须像本项目）
+
+## 3. 类型存放位置
+
+- 决策规则
+- 目录与文件命名模式（写本项目真实路径）
+- 短示例
+
+## 4. 类型声明约定
+
+- …
+- 示例代码块
+
+## 5. 命名
+
+- …
+
+## 6. 注释
+
+- …
+
+## 7. 其它
+
+- …
 ```
 
-空字符串写作一对空反引号。`schema_version` 必须是 `1`，字段如下：
+示例须贴近**目标仓库**真实写法（真实的 request 导入路径、泛型习惯、注释格式），不要使用其它项目的业务 URL 或模块名充当「标准示例」。
 
-| 字段 | 含义 | 允许值 |
-| --- | --- | --- |
-| `apiDir` | API 输出目录 | 项目内相对路径 |
-| `requestImport` | 请求客户端模块路径 | 如 `@/api` |
-| `requestIdentifier` | 请求函数名 | 如 `request` |
-| `requestImportStyle` | 导入方式 | `default` / `named` |
-| `responseMode` | 是否包装响应 | `wrapped` / `unwrapped` |
-| `responseWrapper` | 包装类型 | 如 `Response<T>` |
-| `typeStyle` | 类型声明形式 | `interface` / `type` |
-| `typePlacement` | 类型存放方式 | `same-file` / `separate-file` |
-| `typeDir` | 独立类型目录 | `separate-file` 时必填 |
-| `paramStyle` | 请求参数类型风格 | `inline` / `separate` |
-| `naming` | 函数命名 | `camelCase` / `snake_case` |
-| `formatter` | 格式化命令 | 可空 |
-| `typecheck` | 类型检查命令 | 可空 |
+### 5. 回复用户
+
+说明：
+
+- 写入路径
+- 主要依据（文档章节 / 源码目录，**含类型目录**）
+- 类型默认落点摘要（一两句，使用本项目真实路径）
+- 仍需人工确认的模糊点（若有）
 
 ## 质量要求
 
-- 文件已存在时不得覆盖。
-- 不得静默回退到默认值来掩盖无效文件。
-- 生成的 Markdown 必须可被 `validate-style.mjs` 解析。
-- 只写可复用的生成规则，不复制大段业务代码。
-- 本 skill 不生成业务 API 文件；那是 yapi-sync / backend-api-sync 的职责。
+- 已存在且可用的规范文件不得擅自覆盖
+- 规范文件是 **Agent 可读的约定说明**，不是脚本配置
+- 必须让读者分清：**API 写法**与 **TS 类型存放/声明**；缺少「写到哪」视为不合格
+- 规范内容必须**可移植地发现、绑定到当前项目**；换一个前端仓库重新执行时，应产出反映该仓库习惯的文档，而不是复用固定目录名
+- 只写可复用的生成规则与短示例，不复制大段业务实现
+- 本 skill **不**生成业务 API 文件；那是 yapi-sync / backend-api-sync 的职责
 
 ## 与其它 Skill 的关系
 
-- **yapi-sync**：规范缺失时委托本 skill；自身只读取并生成 YApi API 代码。
-- **backend-api-sync**：规范缺失时委托本 skill；自身只读取并生成后端源码对应的 API 代码。
+- **yapi-sync**：规范缺失时委托本 skill；创建后**阅读全文**再生成对应 API 代码
+- **backend-api-sync**：规范缺失时委托本 skill；创建后**阅读全文**再按后端源码生成 API 代码
+- 下游 skill **不得**再依赖「配置字段」机读解析作为唯一真相
