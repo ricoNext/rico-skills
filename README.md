@@ -171,6 +171,24 @@ TypeScript 类型代码。支持单个接口、多个接口，以及**分类页�
 详细执行流程、Cookie 鉴权与规范检测见
 [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md)。
 
+#### yapi-push
+
+根据用户提供的接口地址，从当前仓库的 Java Spring MVC Controller
+解析入参和返回类型，并同步到 **YApi**。支持单个端点、Controller
+类级路径（同步该 Controller 全部接口），以及多条路径批量推送。
+脚本位于 `skills/yapi-push/scripts/`；Cookie 与 `baseUrl` 复用
+`.rico-skill/yapi-sync/`，默认项目/分类可写入
+`.rico-skill/yapi-push/config.json`。同路径 + 同方法已存在时会先询问覆盖策略。
+
+**典型用法（自然语言，无固定 slash 命令）**：
+
+- 「用 **yapi-push** 把 `/v1/orders` 同步到 YApi」
+- 「把这个接口推到 YApi：`https://api.example.com/v1/orders/{id}`」
+- 「把 `/v1/mis-quotation-space` 这个 Controller 下全部接口上传到 YApi」
+
+详细执行流程、路由匹配与类型转换见
+[skills/yapi-push/SKILL.md](skills/yapi-push/SKILL.md)。
+
 #### backend-api-sync
 
 根据 Java Spring MVC 后端源码中的 `RequestMapping` 路径生成前端 API

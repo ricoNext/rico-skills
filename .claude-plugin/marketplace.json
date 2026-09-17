@@ -19,6 +19,7 @@
         "./skills/tutor",
         "./skills/api-typescript-style",
         "./skills/yapi-sync",
+        "./skills/yapi-push",
         "./skills/backend-api-sync",
         "./skills/gacp"
       ]
