@@ -5,6 +5,7 @@
 ### 新功能
 
 - 新增 `backend-api-sync`：根据 Java Spring MVC 路由解析后端类型并生成前端 API 与 TypeScript 定义。
+- 新增 `yapi-push`：根据接口地址从 Java Spring MVC Controller 解析入参和返回类型，并同步到 YApi。
 
 ### 重构
 

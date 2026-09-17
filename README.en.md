@@ -86,6 +86,17 @@ under `.rico-skill/yapi-sync/`. Shared TypeScript API rules live in
 **api-typescript-style**). See
 [skills/yapi-sync/SKILL.md](skills/yapi-sync/SKILL.md).
 
+### yapi-push
+
+Parse Java Spring MVC Controller request/response types from a
+route (or controller-level path) and push them to **YApi**.
+Scripts live in `skills/yapi-push/scripts/`; Cookie and `baseUrl`
+are reused from `.rico-skill/yapi-sync/`, while default
+`projectId` / `catId` can be stored in
+`.rico-skill/yapi-push/config.json`. Existing interfaces with the
+same path and method require an explicit overwrite strategy. See
+[skills/yapi-push/SKILL.md](skills/yapi-push/SKILL.md).
+
 ### backend-api-sync
 
 Generate frontend API functions and complete TypeScript types from

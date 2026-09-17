@@ -23,11 +23,16 @@ rico-skills/
 │   │   └── profiles/               # Read-only reference profiles (no runtime writes)
 │   ├── writing-style-apply/  # Apply profile to rewrite/generate
 │   │   └── SKILL.md                # Read profiles & rewrite/generate
-│   ├── yapi-sync/                  # YApi interface sync skill (in development)
+│   ├── yapi-sync/                  # YApi → TypeScript codegen
 │   │   ├── SKILL.md                # Cookie auth & batch API generation flow
 │   │   └── scripts/                # Node.js automation scripts
 │   │       ├── fetch-interface.mjs # YApi API fetching script
-│   │       ├── login.mjs           # Auto-login script (planned)
+│   │       └── package.json        # Script dependencies
+│   ├── yapi-push/                  # Java Spring MVC → YApi
+│   │   ├── SKILL.md                # Route parse & YApi write flow
+│   │   ├── reference.md            # Route matching & type mapping
+│   │   └── scripts/                # Node.js automation scripts
+│   │       ├── push-interface.mjs  # Parse Java & push to YApi
 │   │       └── package.json        # Script dependencies
 │   └── catalog.yaml                # Machine-readable skill index
 ├── .claude-plugin/
@@ -75,12 +80,32 @@ node skills/yapi-sync/scripts/fetch-interface.mjs <url-or-interface-id>
 node skills/yapi-sync/scripts/fetch-interface.mjs --resolve-only <category-url>
 ```
 
+### YApi Push Skill
+
+**Install script dependencies (first-time setup):**
+```bash
+npm install --prefix skills/yapi-push/scripts
+```
+
+**Preview Java route parse (no YApi write):**
+```bash
+node skills/yapi-push/scripts/push-interface.mjs --project /path/to/java-repo \
+  --dry-run --route /v1/orders
+```
+
+**Run unit tests:**
+```bash
+npm test --prefix skills/yapi-push/scripts
+```
+
 **View/update runtime configuration:**
 ```bash
-cat /path/to/project/.yapi-sync/config.json
-# Stores: baseUrl and cookieGitignoreUpdated
-cat /path/to/project/.yapi-sync/cookie.json
+cat /path/to/project/.rico-skill/yapi-sync/config.json
+# Stores: baseUrl
+cat /path/to/project/.rico-skill/yapi-sync/cookie.txt
 # Stores: local Cookie only; do not commit
+cat /path/to/project/.rico-skill/yapi-push/config.json
+# Stores: default projectId / catId
 ```
 
 ## Skill Development Workflow
@@ -133,6 +158,14 @@ Split into two skills that share the same runtime profile directory:
 - **Workflow**: Parse URLs → verify auth → fetch interface definitions → check for conflicts → generate code → lint/type-check
 - **Scripts Location**: `skills/yapi-sync/scripts/` (Node.js modules using Puppeteer, ESCodeGen, etc.)
 
+### YApi Push Skill
+
+- **Input**: Interface path / URL, or a Controller-level `@RequestMapping` path
+- **Output**: Created or updated YApi interfaces from Java Spring MVC source
+- **Authentication**: Reuses `.rico-skill/yapi-sync/` Cookie and `baseUrl`
+- **Workflow**: Parse route → match Controller → infer request/response schema → preview create/update → ask overwrite strategy → write to YApi
+- **Scripts Location**: `skills/yapi-push/scripts/` (Node.js, `java-parser`)
+
 ### Task Tracking
 
 Current tasks are stored in the task system (not a file):
@@ -178,10 +211,11 @@ TaskUpdate 1 --status completed
 - **writing-style-learn**: Manually verify profile files are created in `~/.rico-skills/author-writing-style/profiles/`
 - **writing-style-apply**: Verify rewrite/generate uses an existing profile and does not write to profiles
 - **yapi-sync**: Test with small batches first (1-2 interfaces) before bulk sync; verify generated TypeScript files compile
+- **yapi-push**: Run `npm test --prefix skills/yapi-push/scripts`; dry-run a small route before writing to YApi
 - **Marketplace plugin**: Validate `.claude-plugin/marketplace.json` structure before publishing
 
 ## File Patterns to Avoid
 
 - Do **not** write personal data or user profiles to `skills/<skill-id>/profiles/` at runtime
-- Do **not** commit user project `.yapi-sync/cookie.json` with real cookies or credentials
+- Do **not** commit user project `.rico-skill/yapi-sync/cookie.txt` with real cookies or credentials
 - Do **not** modify marketplace.json without understanding skill listing impact

@@ -35,6 +35,12 @@ skills:
     description: >-
       从 YApi 读取接口定义并生成/更新项目中的 API 和 TypeScript 类型，支持单个、批量及分类列表同步。
     tags: [api, yapi, typescript, codegen]
+  - id: yapi-push
+    path: skills/yapi-push
+    name: YApi 接口推送
+    description: >-
+      根据接口地址从 Java Spring MVC Controller 解析入参和返回类型，并同步到 YApi。
+    tags: [api, yapi, java, spring, codegen]
   - id: backend-api-sync
     path: skills/backend-api-sync
     name: 后端接口同步
