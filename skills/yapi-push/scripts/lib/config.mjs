@@ -1,16 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { normalizeUserRoute } from "./parse-route.mjs";
+
 export const COOKIE_GITIGNORE_ENTRY = ".rico-skill/yapi-sync/cookie.txt";
 
 const defaultYapiSyncConfig = {
     baseUrl: "https://yapi.iotbull.com",
     cookieGitignoreUpdated: false,
-};
-
-const defaultPushConfig = {
-    catId: null,
-    projectId: null,
 };
 
 export const getProjectRoot = (explicit) => {
@@ -159,18 +156,109 @@ const toNullableNumber = (value) => {
     return Number.isFinite(number) && number > 0 ? number : null;
 };
 
+/**
+ * 规范化 catIds 映射：
+ * { "1788": ["/v1/mis-hq-project"] }
+ * key = YApi 分类 ID；value = Controller 类级 @RequestMapping 路径列表
+ */
+export const normalizeCatIds = (raw) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        return {};
+    }
+
+    const next = {};
+    for (const [key, paths] of Object.entries(raw)) {
+        const catId = toNullableNumber(key);
+        if (!catId) {
+            continue;
+        }
+
+        const list = Array.isArray(paths) ? paths : [];
+        const normalized = [...new Set(
+            list
+                .map((item) => normalizeUserRoute(item))
+                .filter((item) => item && item !== "/")
+        )].sort();
+
+        if (normalized.length > 0) {
+            next[String(catId)] = normalized;
+        }
+    }
+
+    return next;
+};
+
+export const findCatIdByControllerPath = (catIds, controllerPath) => {
+    const target = normalizeUserRoute(controllerPath);
+    if (!target || target === "/") {
+        return null;
+    }
+
+    for (const [catId, paths] of Object.entries(normalizeCatIds(catIds))) {
+        if (paths.includes(target)) {
+            return Number(catId);
+        }
+    }
+
+    return null;
+};
+
+export const bindControllerPathToCatId = (catIds, catId, controllerPath) => {
+    const target = normalizeUserRoute(controllerPath);
+    const id = toNullableNumber(catId);
+    if (!target || target === "/" || !id) {
+        return normalizeCatIds(catIds);
+    }
+
+    const next = {};
+    for (const [key, paths] of Object.entries(normalizeCatIds(catIds))) {
+        const filtered = paths.filter((item) => item !== target);
+        if (filtered.length > 0) {
+            next[key] = filtered;
+        }
+    }
+
+    const bucket = next[String(id)] || [];
+    if (!bucket.includes(target)) {
+        bucket.push(target);
+    }
+
+    next[String(id)] = bucket.sort();
+    return next;
+};
+
 export const readPushConfig = (projectRoot) => {
     const parsed = readJsonFile(getPushConfigPath(projectRoot));
+    const projectId = toNullableNumber(parsed.projectId ?? parsed.project_id);
+    // 旧版单 catId 不再作为全局默认；需按 Controller 路径重新绑定到 catIds
+    const catIds = normalizeCatIds(parsed.catIds);
+
     return {
-        catId: toNullableNumber(parsed.catId ?? parsed.catid),
-        projectId: toNullableNumber(parsed.projectId ?? parsed.project_id),
+        catIds,
+        projectId,
     };
 };
 
 export const writePushConfig = (config, projectRoot) => {
     const current = readPushConfig(projectRoot);
+    let catIds = Object.hasOwn(config, "catIds")
+        ? normalizeCatIds(config.catIds)
+        : { ...current.catIds };
+
+    const bindCatId = toNullableNumber(config.catId ?? config.catid);
+    const controllerPaths = [
+        ...(Array.isArray(config.controllerPaths) ? config.controllerPaths : []),
+        ...(config.controllerPath ? [config.controllerPath] : []),
+    ];
+
+    if (bindCatId && controllerPaths.length > 0) {
+        for (const controllerPath of controllerPaths) {
+            catIds = bindControllerPathToCatId(catIds, bindCatId, controllerPath);
+        }
+    }
+
     const nextConfig = {
-        catId: toNullableNumber(config.catId ?? config.catid) ?? current.catId,
+        catIds,
         projectId: toNullableNumber(config.projectId ?? config.project_id) ?? current.projectId,
     };
     writeJsonFile(getPushConfigPath(projectRoot), nextConfig);
@@ -183,7 +271,7 @@ export const readConfig = (projectRoot) => {
 
     return {
         baseUrl: yapiSync.baseUrl,
-        catId: push.catId,
+        catIds: push.catIds,
         cookie: yapiSync.cookie,
         cookieGitignoreUpdated: yapiSync.cookieGitignoreUpdated,
         projectId: push.projectId,

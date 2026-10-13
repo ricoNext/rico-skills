@@ -58,7 +58,21 @@
 | --- | --- |
 | `.rico-skill/yapi-sync/config.json` | `baseUrl` |
 | `.rico-skill/yapi-sync/cookie.txt` | 登录 Cookie |
-| `.rico-skill/yapi-push/config.json` | 默认 `projectId`、`catId` |
+| `.rico-skill/yapi-push/config.json` | `projectId` + `catIds`（分类 ID → Controller 类级路径列表） |
+
+`catIds` 示例：
+
+```json
+{
+  "projectId": 112,
+  "catIds": {
+    "1788": ["/v1/mis-hq-project"],
+    "1800": ["/v1/mis-quotation-space"]
+  }
+}
+```
+
+解析规则：用命中 Controller 的类级 `@RequestMapping`（`controllerPath`）在 `catIds` 的数组里查找对应分类；找不到则要求用户提供 `--cat-id` 并写回配置。旧版单字段 `catId` 已废弃，不再作为全局默认。
 
 ## YApi 写入
 
