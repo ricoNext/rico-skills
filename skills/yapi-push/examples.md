@@ -14,11 +14,19 @@ node scripts/push-interface.mjs --project /path/to/repo \
   --dry-run --route 'https://mis.example.com/v1/mis-quotation-space/getQuotationSpaceList'
 ```
 
-确认后写入：
+确认后写入（若该 Controller 路径已在 `config.catIds` 中映射，可省略 `--cat-id`）：
 
 ```bash
 node scripts/push-interface.mjs --project /path/to/repo \
-  --project-id 112 --cat-id 1686 \
+  --strategy overwrite \
+  --route /v1/mis-quotation-space/getQuotationSpaceList
+```
+
+首次同步、尚未映射分类时，带上 `--cat-id`（会写入 `catIds`）：
+
+```bash
+node scripts/push-interface.mjs --project /path/to/repo \
+  --cat-id 1686 \
   --strategy overwrite \
   --route /v1/mis-quotation-space/getQuotationSpaceList
 ```
@@ -27,8 +35,16 @@ node scripts/push-interface.mjs --project /path/to/repo \
 
 ```bash
 node scripts/push-interface.mjs --project /path/to/repo \
-  --project-id 112 --cat-id 1686 \
   --dry-run --route /v1/mis-quotation-space
+```
+
+未映射时 dry-run 会返回 `needsCatId: true` 与 `unmappedControllerPaths`，用户选定分类后再：
+
+```bash
+node scripts/push-interface.mjs --project /path/to/repo \
+  --cat-id 1686 \
+  --strategy overwrite \
+  --route /v1/mis-quotation-space
 ```
 
 ## 列出分类

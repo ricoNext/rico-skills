@@ -67,18 +67,52 @@ POST /v1/mis-quotation-space/getQuotationSpaceList
 读取 `{projectRoot}/.rico-skill/yapi-sync/config.json` 和
 `cookie.txt`。失效则按步骤 3.1 让用户粘贴 Cookie。
 
-`project_id` / `catid` 优先级：
+#### 3.0 `projectId` 与 `catIds` 配置
 
-1. 用户给的 YApi 项目/分类 URL，或 `--project-id` / `--cat-id`
-2. `{projectRoot}/.rico-skill/yapi-push/config.json`
+配置文件：`{projectRoot}/.rico-skill/yapi-push/config.json`
 
-缺少 `project_id` 时询问项目 URL。缺少 `catid` 时：
+```json
+{
+  "projectId": 112,
+  "catIds": {
+    "1788": ["/v1/mis-hq-project", "/v1/mis-store-project"],
+    "1800": ["/v1/mis-quotation-space"]
+  }
+}
+```
+
+| 字段 | 含义 |
+| --- | --- |
+| `projectId` | YApi 项目 ID，一般固定 |
+| `catIds` | 分类映射：key = YApi 分类 ID；value = 该分类下 Controller 类级 `@RequestMapping` 路径列表（如 `/v1/mis-hq-project`） |
+
+**`projectId` 优先级：**
+
+1. 用户给的 YApi 项目 URL，或 `--project-id`
+2. `config.json` 中的 `projectId`
+
+缺少时询问项目 URL，确认后写入 `config.json`。
+
+**`catId` 解析（禁止用全局单一 catId 兜底）：**
+
+1. 用户本次显式指定：YApi 分类 URL 或 `--cat-id`
+2. 从源码命中的 Controller 取出类级路径 `controllerPath`（即 `@RequestMapping("/v1/mis-hq-project")` 中的 `/v1/mis-hq-project`）
+3. 在 `config.catIds` 中查找：哪个分类的数组包含该 `controllerPath`
+4. **找不到** → 不要猜测。执行：
 
 ```bash
 ${PUSH} --list-cats --project-id {projectId}
 ```
 
-列出分类让用户选。不要猜分类。
+列出分类，AskQuestion 让用户选择「本次 Controller 应写入哪个 catId」。用户确认后：
+
+```bash
+${PUSH} --dry-run --project-id {projectId} --cat-id {catId} --route '{path}'
+```
+
+带 `--cat-id` 时脚本会自动把 `controllerPath` 写入对应 `catIds[catId]`，供下次复用。同一路径若曾属于其他分类，会先从旧分类移除再绑到新分类。
+
+dry-run 若返回 `needsCatId: true` / `unmappedControllerPaths`，必须先完成上述绑定再写入 YApi。
 
 #### 3.1 获取 Cookie
 
@@ -95,13 +129,13 @@ YApi Cookie 未配置或已失效。
 ### 4. 预览新增 / 更新
 
 ```bash
-${PUSH} --dry-run --project-id {projectId} --cat-id {catId} --route '{path}'
+${PUSH} --dry-run --route '{path}'
 ```
 
 ```text
-即将同步到 YApi 项目 {projectId}：
-- [新增] POST /v1/mis-quotation-space/getQuotationSpaceList  查询用户的快速报价空间 - C
-- [更新] GET /orders/{id}  getOrder（已存在 #18430）
+即将同步到 YApi 项目 {projectId} / 分类 {catId}：
+- [新增] POST /v1/mis-hq-project/getPagedList  （controllerPath=/v1/mis-hq-project → cat 1788）
+- [更新] POST /v1/mis-hq-project/getDetail
 ```
 
 ### 5. 覆盖策略
@@ -120,15 +154,21 @@ ${PUSH} --dry-run --project-id {projectId} --cat-id {catId} --route '{path}'
 ### 6. 写入
 
 ```bash
-${PUSH} --strategy overwrite --project-id {projectId} --cat-id {catId} --route '{path}'
+${PUSH} --strategy overwrite --route '{path}'
 ```
 
 仅新增用 `--strategy skip`。
 
-常用目标可记住：
+首次绑定分类（用户刚选完 catId）：
 
 ```bash
-${PUSH} --save-defaults --project-id {projectId} --cat-id {catId} --dry-run --route '{path}'
+${PUSH} --strategy overwrite --cat-id {catId} --route '{path}'
+```
+
+只记住 projectId（不改 catIds）：
+
+```bash
+${PUSH} --save-defaults --project-id {projectId} --dry-run --route '{path}'
 ```
 
 ### 7. 输出结果
@@ -150,16 +190,16 @@ https://yapi.example.com/project/{projectId}/interface/api/{id}
 | 源码未找到该 path | 停止并列出尝试过的地址 |
 | Cookie 失效 / 退出码 10 | 步骤 3.1 |
 | 缺少 project_id | 询问 YApi 项目 URL |
-| 缺少 catid | `--list-cats` 后请用户选择 |
+| Controller 路径未出现在 `catIds` | `--list-cats` 后请用户选择 catId，再用 `--cat-id` 绑定并写入 config |
 | 单条写入失败 | 记录后继续其余接口 |
 
 ## 示例
 
-用户：把 `/v1/mis-quotation-space/getQuotationSpaceList` 同步到 YApi
+用户：把 `/v1/mis-hq-project` 同步到 YApi
 
-1. `--dry-run --route /v1/mis-quotation-space/getQuotationSpaceList`
+1. `--dry-run --route /v1/mis-hq-project`
 2. 展示 Controller、方法、入参 DTO、返回类型
-3. 若缺项目/分类，询问
+3. 若 `needsCatId`，列出分类请用户选，再 `--cat-id {id}` 绑定到 config
 4. 已存在则询问覆盖
 5. 写入并返回 YApi 链接
 

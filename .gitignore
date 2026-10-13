@@ -142,3 +142,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 docs/
+
+# 测试代码不提交到仓库
+tests/
+*.test.mjs

@@ -45,6 +45,7 @@ export const contractToYapiInterfaces = (contract, defaults = {}) => {
             interfaces.push({
                 catid: defaults.catId,
                 controller: match.controller,
+                controllerPath: match.basePath,
                 desc: `<p>${endpoint.title || endpoint.javaMethod}</p><p>${match.source}#${endpoint.javaMethod}</p>`,
                 javaMethod: endpoint.javaMethod,
                 markdown: `${endpoint.title || endpoint.javaMethod}\n\n\`${match.source}#${endpoint.javaMethod}\``,

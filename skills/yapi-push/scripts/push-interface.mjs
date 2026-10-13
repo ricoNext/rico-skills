@@ -3,7 +3,7 @@ import path from "node:path";
 import process from "node:process";
 
 import { contractToYapiInterfaces } from "./lib/contract-to-yapi.mjs";
-import { readConfig, writePushConfig } from "./lib/config.mjs";
+import { findCatIdByControllerPath, readConfig, writePushConfig } from "./lib/config.mjs";
 import { parseJavaSpring } from "./lib/java-cst.mjs";
 import { buildYapiPayload, parseDefinitionInput, parseYapiTarget } from "./lib/parse-definition.mjs";
 import { isRouteLike, normalizeUserRoute, stripProjectBasepath } from "./lib/parse-route.mjs";
@@ -35,10 +35,10 @@ const printUsage = () => {
   --backend-root <dir>      Java 工程根，默认与 --project 相同
   --route <path>            接口路径，可重复；也可直接把路径作为位置参数
   --project-id <id>         YApi 项目 ID
-  --cat-id <id>             分类 ID
+  --cat-id <id>             分类 ID（会绑定到本次 Controller 类级路径）
   --strategy overwrite|skip 已存在接口的处理策略；默认 overwrite
   --dry-run                 只预览，不写入
-  --save-defaults           把本次 project-id/cat-id 写入 .rico-skill/yapi-push/config.json
+  --save-defaults           把 projectId 与本次 catId↔Controller 路径映射写入 config.json
   --list-cats               列出项目分类
   --list-menu               列出项目接口菜单`);
 };
@@ -107,7 +107,11 @@ const printJson = (payload) => {
     console.log(JSON.stringify(payload, null, 2));
 };
 
-const resolveCatId = (definition, cats, fallbackCatId) => {
+const resolveCatId = (definition, cats, catIds, forcedCatId) => {
+    if (forcedCatId) {
+        return forcedCatId;
+    }
+
     if (definition.catid) {
         return definition.catid;
     }
@@ -119,7 +123,7 @@ const resolveCatId = (definition, cats, fallbackCatId) => {
         }
     }
 
-    return fallbackCatId || undefined;
+    return findCatIdByControllerPath(catIds, definition.controllerPath) || undefined;
 };
 
 const resolveCatName = (catid, catName, cats) => {
@@ -129,13 +133,14 @@ const resolveCatName = (catid, catName, cats) => {
 
 const previewItems = (interfaces, menu, cats, defaults) =>
     interfaces.map((item) => {
-        const catid = resolveCatId(item, cats, defaults.catId);
+        const catid = resolveCatId(item, cats, defaults.catIds, defaults.forcedCatId);
         const existing = findExisting(menu, item.path, item.method, defaults.basepath);
         return {
             action: existing ? "update" : "create",
             catName: resolveCatName(catid, item.cat_name, cats),
             catid,
             controller: item.controller,
+            controllerPath: item.controllerPath,
             existingId: existing?.id,
             existingPath: existing?.path,
             existingTitle: existing?.title,
@@ -148,6 +153,9 @@ const previewItems = (interfaces, menu, cats, defaults) =>
             title: item.title,
         };
     });
+
+const uniqueControllerPaths = (items) =>
+    [...new Set(items.map((item) => item.controllerPath).filter(Boolean))];
 
 const main = async () => {
     const args = process.argv.slice(2);
@@ -183,7 +191,7 @@ const main = async () => {
     const allRoutes = [...new Set([...routes.map((item) => normalizeUserRoute(item)), ...positionalRoutes].filter(Boolean))];
 
     const projectId = Number(projectIdFlag || targetFromArgs.projectId || config.projectId) || undefined;
-    const catId = Number(catIdFlag || targetFromArgs.catId || config.catId) || undefined;
+    const forcedCatId = Number(catIdFlag || targetFromArgs.catId) || undefined;
 
     if (listCats || listMenu) {
         if (!projectId) {
@@ -222,12 +230,19 @@ const main = async () => {
             }
 
             parsed.unresolved.push(...(contract.unresolved || []));
-            parsed.interfaces.push(...contractToYapiInterfaces(contract, { catId, projectId }));
+            const interfaces = contractToYapiInterfaces(contract, { projectId });
+            for (const item of interfaces) {
+                item.catid = forcedCatId
+                    || findCatIdByControllerPath(config.catIds, item.controllerPath)
+                    || undefined;
+            }
+
+            parsed.interfaces.push(...interfaces);
         }
     } else if (jsonFiles.length > 0) {
         const inputText = await readInputText(jsonFiles);
         const fromJson = parseDefinitionInput(inputText, {
-            catId,
+            catId: forcedCatId,
             method,
             path: apiPath,
             projectId,
@@ -251,8 +266,7 @@ const main = async () => {
         }
     }
 
-    if (catIdFlag) {
-        const forcedCatId = Number(catIdFlag);
+    if (forcedCatId) {
         for (const item of parsed.interfaces) {
             item.catid = forcedCatId;
         }
@@ -299,25 +313,51 @@ const main = async () => {
     const basepath = projectInfo?.basepath || "";
     const items = previewItems(parsed.interfaces, menu, cats, {
         basepath,
-        catId,
+        catIds: config.catIds,
+        forcedCatId,
         projectId: resolvedProjectId,
     });
 
     const missingCat = items.filter((item) => item.missingCat);
+    const unmappedControllerPaths = uniqueControllerPaths(missingCat);
     const summary = {
         create: items.filter((item) => item.action === "create").length,
         parseErrors: parsed.errors.length,
         update: items.filter((item) => item.action === "update").length,
     };
 
+    const persistForcedCatMapping = () => {
+        const controllerPaths = uniqueControllerPaths(items);
+        if (!forcedCatId || controllerPaths.length === 0) {
+            return false;
+        }
+
+        writePushConfig({
+            catId: forcedCatId,
+            controllerPaths,
+            projectId: resolvedProjectId,
+        }, projectRoot);
+        return true;
+    };
+
     if (dryRun) {
+        if (forcedCatId) {
+            persistForcedCatMapping();
+        } else if (saveDefaults) {
+            writePushConfig({ projectId: resolvedProjectId }, projectRoot);
+        }
+
+        const latestConfig = readConfig(projectRoot);
         printJson({
             cats: cats.map((item) => ({ id: item._id, name: item.name })),
+            catIds: latestConfig.catIds,
             errors: parsed.errors,
             items,
+            needsCatId: missingCat.length > 0,
             ok: parsed.errors.length === 0,
             projectId: resolvedProjectId,
             summary,
+            unmappedControllerPaths,
             unresolved: parsed.unresolved,
         });
         if (parsed.errors.length > 0) {
@@ -329,9 +369,11 @@ const main = async () => {
     if (missingCat.length > 0) {
         printJson({
             cats: cats.map((item) => ({ id: item._id, name: item.name })),
-            error: "部分接口缺少 catid，请使用 --cat-id 或在定义中提供 catid / cat_name",
+            error: "部分 Controller 路径未映射到 catId，请使用 --cat-id 指定分类；Agent 应在用户确认后写入 config.catIds",
             items: missingCat,
+            needsCatId: true,
             ok: false,
+            unmappedControllerPaths,
         });
         process.exit(1);
     }
@@ -341,8 +383,10 @@ const main = async () => {
         process.exit(1);
     }
 
-    if (saveDefaults) {
-        writePushConfig({ catId, projectId: resolvedProjectId }, projectRoot);
+    if (forcedCatId) {
+        persistForcedCatMapping();
+    } else if (saveDefaults) {
+        writePushConfig({ projectId: resolvedProjectId }, projectRoot);
     }
 
     const results = [];
